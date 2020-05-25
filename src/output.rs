@@ -1,6 +1,6 @@
 use crate::encoding::{encode_bits_with_format, package_bits, EncodedBits};
 use async_trait::async_trait;
-use cpal::traits::DeviceTrait;
+use cpal::traits::{DeviceTrait, StreamTrait};
 use cpal::Device;
 
 type Meters = f64;
@@ -21,18 +21,61 @@ pub struct BirdIOutput {
     device: Device,
 }
 
+fn write_data<T>(
+    output: &mut [T],
+    channels: usize,
+    mut next_sample: impl std::iter::IntoIterator<Item = T>,
+) where
+    T: cpal::Sample,
+{
+    for frame in output.chunks_mut(channels) {
+        let val = next_sample.next();
+        match val {
+            Some(value) => {
+                for sample in frame.iter_mut() {
+                    *sample = value;
+                }
+            }
+            None => break,
+        }
+    }
+}
+
 impl BirdIOutput {
     fn play_encoded_bits(&self, data: EncodedBits) -> Result<(), Box<dyn std::error::Error>> {
         let err_fn = |err| println!("Error occurred: {}", err);
-        let config = self.device.default_output_config()?;
-        let outputstream = match data {
-            EncodedBits::I16(val) => {
-                self.device.build_output_stream();
-            
+        let config: cpal::StreamConfig = self.device.default_output_config()?.into();
+        let channels = config.channels as usize;
+        let output_stream = match data {
+            EncodedBits::I16(ref val) => {
+                self.device.build_output_stream(
+                    &config,
+                    move |data: &mut [i16], _: &cpal::OutputCallbackInfo| {
+                       write_data(data, channels, val.into_iter());
+                    },
+                    err_fn,
+                )?
             }
-            EncodedBits::U16(val) => {}
-            EncodedBits::F32(val) => {}
+            EncodedBits::U16(val) => {
+                self.device.build_output_stream(
+                    &config,
+                    move |data: &mut [u16], _: &cpal::OutputCallbackInfo| {
+                        /* The logic should go here */
+                    },
+                    err_fn,
+                )?
+            }
+            EncodedBits::F32(val) => {
+                self.device.build_output_stream(
+                    &config,
+                    move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                        /* The logic should go here */
+                    },
+                    err_fn,
+                )?
+            }
         };
+        output_stream.play()?;
         todo!()
     }
 }
