@@ -1,6 +1,6 @@
 use cpal::Device;
 use async_trait::async_trait;
-use crate::encoding::encode_bits_with_format;
+use crate::encoding::{encode_bits_with_format, package_bits};
 use cpal::traits::DeviceTrait;
 
 type Meters = f64;
@@ -30,7 +30,10 @@ impl Sender for BirdIOutput {
 
     async fn broadcast_data(&self, info: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
         let fmt = self.device.default_output_format()?;
-        let data = encode_bits_with_format(info, fmt);
+        let data = encode_bits_with_format(info, &fmt);
+        let transmit_data = package_bits(&data, &fmt); 
+
+        
         todo!()
     }
 }
