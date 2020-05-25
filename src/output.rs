@@ -24,7 +24,7 @@ pub struct BirdIOutput {
 fn write_data<T>(
     output: &mut [T],
     channels: usize,
-    mut next_sample: impl std::iter::IntoIterator<Item = T>,
+    mut next_sample: impl std::iter::Iterator<Item = T>,
 ) where
     T: cpal::Sample,
 {
@@ -48,10 +48,11 @@ impl BirdIOutput {
         let channels = config.channels as usize;
         let output_stream = match data {
             EncodedBits::I16(ref val) => {
+                let new_ref: Vec<i16> = val.clone();
                 self.device.build_output_stream(
                     &config,
                     move |data: &mut [i16], _: &cpal::OutputCallbackInfo| {
-                       write_data(data, channels, val.into_iter());
+                       write_data(data, channels, new_ref.clone().into_iter());
                     },
                     err_fn,
                 )?
