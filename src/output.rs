@@ -111,7 +111,7 @@ mod tests {
     async fn sanity_sound_output() {
         let driver = BirdIOutput::default(); 
         let test_data = vec![200; 1000];
-        driver.broadcast_data(&test_data);
+        driver.broadcast_data(&test_data).await;
     }
 
 
