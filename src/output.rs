@@ -1,6 +1,6 @@
 use crate::encoding::{encode_bits_with_format, package_bits, EncodedBits};
 use async_trait::async_trait;
-use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
 
 type Meters = f64;
@@ -42,11 +42,12 @@ fn write_data<T>(
 }
 
 impl BirdIOutput {
-
     pub fn default() -> Self {
         let host = cpal::default_host();
-        let device = host.default_output_device().expect("Can't find audio device on this system");
-        BirdIOutput { device } 
+        let device = host
+            .default_output_device()
+            .expect("Can't find audio device on this system");
+        BirdIOutput { device }
     }
     fn play_encoded_bits(&self, data: EncodedBits) -> Result<(), Box<dyn std::error::Error>> {
         let err_fn = |err| println!("Error occurred: {}", err);
@@ -86,7 +87,7 @@ impl BirdIOutput {
         };
         output_stream.play()?;
         std::thread::sleep(std::time::Duration::from_millis(1000));
-        Ok(()) 
+        Ok(())
     }
 }
 
@@ -104,16 +105,13 @@ impl Sender for BirdIOutput {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::output::*;
     #[tokio::test]
     async fn sanity_sound_output() {
-        let driver = BirdIOutput::default(); 
+        let driver = BirdIOutput::default();
         let test_data = vec![200; 1000];
         driver.broadcast_data(&test_data).await;
     }
-
-
 }
