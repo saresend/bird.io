@@ -52,32 +52,34 @@ impl BirdIOutput {
                 self.device.build_output_stream(
                     &config,
                     move |data: &mut [i16], _: &cpal::OutputCallbackInfo| {
-                       write_data(data, channels, new_ref.clone().into_iter());
+                        write_data(data, channels, new_ref.clone().into_iter());
                     },
                     err_fn,
                 )?
             }
             EncodedBits::U16(val) => {
+                let new_ref: Vec<u16> = val.clone();
                 self.device.build_output_stream(
                     &config,
                     move |data: &mut [u16], _: &cpal::OutputCallbackInfo| {
-                        /* The logic should go here */
+                        write_data(data, channels, new_ref.clone().into_iter());
                     },
                     err_fn,
                 )?
             }
             EncodedBits::F32(val) => {
+                let new_ref: Vec<f32> = val.clone();
                 self.device.build_output_stream(
                     &config,
                     move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                        /* The logic should go here */
+                        write_data(data, channels, new_ref.clone().into_iter());
                     },
                     err_fn,
                 )?
             }
         };
         output_stream.play()?;
-        todo!()
+        Ok(()) 
     }
 }
 
@@ -93,4 +95,15 @@ impl Sender for BirdIOutput {
         let transmit_data = package_bits(&data, &fmt.sample_format());
         self.play_encoded_bits(transmit_data)
     }
+}
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn sanity_sound_output() {
+        
+    }
+
+
 }
