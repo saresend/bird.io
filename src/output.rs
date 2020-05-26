@@ -1,6 +1,6 @@
 use crate::encoding::{encode_bits_with_format, package_bits, EncodedBits};
 use async_trait::async_trait;
-use cpal::traits::{DeviceTrait, StreamTrait};
+use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 use cpal::Device;
 
 type Meters = f64;
@@ -42,7 +42,13 @@ fn write_data<T>(
 }
 
 impl BirdIOutput {
-    fn play_encoded_bits(&self, data: EncodedBits) -> Result<(), Box<dyn std::error::Error>> {
+
+    pub fn default() -> Self {
+        let host = cpal::default_host();
+        let device = host.default_output_device().expect("Can't find audio device on this system");
+        BirdIOutput { device } 
+    }
+    pub fn play_encoded_bits(&self, data: EncodedBits) -> Result<(), Box<dyn std::error::Error>> {
         let err_fn = |err| println!("Error occurred: {}", err);
         let config: cpal::StreamConfig = self.device.default_output_config()?.into();
         let channels = config.channels as usize;
