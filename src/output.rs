@@ -85,6 +85,7 @@ impl BirdIOutput {
             }
         };
         output_stream.play()?;
+        std::thread::sleep(std::time::Duration::from_millis(1000));
         Ok(()) 
     }
 }
