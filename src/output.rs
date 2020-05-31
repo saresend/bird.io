@@ -21,15 +21,15 @@ pub struct BirdIOutput {
     device: Device,
 }
 
-fn write_data<T>(output: &mut [T], channels: usize, samples: Vec<T>)
+fn write_data<T>(output: &mut [T], channels: usize, samples: &[T])
 where
     T: cpal::Sample,
-    T: std::marker::Copy + std::marker::Send,
+    T: std::marker::Send,
 {
     for frame in output.chunks_mut(channels) {
         for val in samples {
             for sample in frame.iter_mut() {
-                *sample = val;
+                *sample = *val;
             }
         }
     }
@@ -46,7 +46,8 @@ impl BirdIOutput {
     fn play_encoded_bits<T>(&self, data: Vec<T>) -> Result<(), Box<dyn std::error::Error>>
     where
         T: cpal::Sample,
-        T: std::marker::Copy + std::marker::Send,
+        T: 'static,
+        T: std::marker::Send,
     {
         let err_fn = |err| println!("Error occurred: {}", err);
         let config: cpal::SupportedStreamConfig = self.device.default_output_config()?.into();
@@ -55,7 +56,7 @@ impl BirdIOutput {
         let output_stream = self.device.build_output_stream(
             &config.config(),
             move |input: &mut [T], _: &cpal::OutputCallbackInfo| {
-                write_data::<T>(input, channels, data)
+                write_data::<T>(input, channels, &data)
             },
             err_fn,
         )?;
