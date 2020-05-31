@@ -12,7 +12,7 @@ pub struct ReceiverInfo {
 
 // This will contain logic for outbound data transmission
 #[async_trait]
-pub trait Sender {
+pub trait BirdSender {
     async fn nearby_receivers(&self) -> Result<Vec<ReceiverInfo>, Box<dyn std::error::Error>>;
     async fn broadcast_data(&self, info: &[u8]) -> Result<(), Box<dyn std::error::Error>>;
 }
@@ -67,7 +67,7 @@ impl BirdIOutput {
 }
 
 #[async_trait]
-impl Sender for BirdIOutput {
+impl BirdSender for BirdIOutput {
     async fn nearby_receivers(&self) -> Result<Vec<ReceiverInfo>, Box<dyn std::error::Error>> {
         todo!()
     }
@@ -98,6 +98,6 @@ mod tests {
     async fn sanity_sound_output() {
         let driver = BirdIOutput::default();
         let test_data = vec![200; 1000];
-        driver.broadcast_data(&test_data).await;
+        let _ = driver.broadcast_data(&test_data).await;
     }
 }
