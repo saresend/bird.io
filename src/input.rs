@@ -1,7 +1,7 @@
 // This will contain logic for reading in input
 use crate::encoding;
 use async_trait::async_trait;
-use cpal::traits::{DeviceTrait, HostTrait};
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
 
 pub struct BirdIInput {
@@ -10,8 +10,9 @@ pub struct BirdIInput {
 
 type Callback = fn(Vec<u8>);
 
+#[async_trait]
 pub trait Receiver {
-    fn receive_data(&self, callback: Callback) -> Result<(), Box<dyn std::error::Error>>;
+    async fn receive_data(&self, callback: Callback) -> Result<(), Box<dyn std::error::Error>>;
     fn clear_listener(&self);
 }
 
@@ -25,8 +26,9 @@ impl BirdIInput {
     }
 }
 
+#[async_trait]
 impl Receiver for BirdIInput {
-    fn receive_data(&self, callback: Callback) -> Result<(), Box<dyn std::error::Error>> {
+    async fn receive_data(&self, callback: Callback) -> Result<(), Box<dyn std::error::Error>> {
         let config = self.device.default_input_config()?;
         let err_fn = |err| eprintln!("Error occurred during receive: {}", err);
         let stream = match config.sample_format() {
@@ -46,16 +48,29 @@ impl Receiver for BirdIInput {
                 err_fn,
             )?,
         };
-        /*
-        let receiver_thread = std::thread::spawn(move || {
-            use cpal::traits::StreamTrait;
-            stream.play();
-        });
-        */
-        todo!()
+        stream.play()?;
+        std::thread::sleep(std::time::Duration::from_millis(1000));
+        Ok(())
     }
 
     fn clear_listener(&self) {
         todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::input::*;
+    use crate::output::*;
+
+    #[tokio::test]
+    async fn sanity_test_receiving_data() {
+        let output_driver = BirdIOutput::default();
+        let test_data = vec![100; 100];
+        let output = output_driver.broadcast_data(&test_data);
+
+        let input_driver = BirdIInput::default();
+        let input = input_driver.receive_data(move |data| println!("{:?}", data));
+        let _ = tokio::join!(input, output);
     }
 }
