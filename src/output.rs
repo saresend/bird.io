@@ -100,4 +100,10 @@ mod tests {
         let test_data = vec![200; 1000];
         let _ = driver.broadcast_data(&test_data).await;
     }
+
+    #[tokio::test]
+    async fn test_low_high_freq() {
+        let driver = BirdIOutput::default();
+        let test_data = vec![]
+    }
 }
