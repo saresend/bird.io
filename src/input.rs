@@ -32,30 +32,26 @@ impl Receiver for BirdIInput {
         let stream = match config.sample_format() {
             cpal::SampleFormat::F32 => self.device.build_input_stream(
                 &config.into(),
-                move |data: &[f32], _: &_| {
-                    callback(encoding::decode_bits::<f32>(data, &cpal::SampleFormat::F32))
-                },
+                move |data: &[f32], _: &_| callback(encoding::decode_bits::<f32>(data)),
                 err_fn,
             )?,
             cpal::SampleFormat::I16 => self.device.build_input_stream(
                 &config.into(),
-                move |data: &[i16], _: &_| {
-                    callback(encoding::decode_bits::<i16>(data, &cpal::SampleFormat::I16))
-                },
+                move |data: &[i16], _: &_| callback(encoding::decode_bits::<i16>(data)),
                 err_fn,
             )?,
             cpal::SampleFormat::U16 => self.device.build_input_stream(
                 &config.into(),
-                move |data: &[u16], _: &_| {
-                    callback(encoding::decode_bits::<u16>(data, &cpal::SampleFormat::U16))
-                },
+                move |data: &[u16], _: &_| callback(encoding::decode_bits::<u16>(data)),
                 err_fn,
             )?,
         };
+        /*
         let receiver_thread = std::thread::spawn(move || {
             use cpal::traits::StreamTrait;
             stream.play();
         });
+        */
         todo!()
     }
 
