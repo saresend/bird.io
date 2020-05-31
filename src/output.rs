@@ -1,4 +1,4 @@
-use crate::encoding::{encode_bits_with_format, package_bits, EncodedBits};
+use crate::encoding::{decode_bits, encode_bits};
 use async_trait::async_trait;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
@@ -49,42 +49,17 @@ impl BirdIOutput {
             .expect("Can't find audio device on this system");
         BirdIOutput { device }
     }
-    fn play_encoded_bits(&self, data: EncodedBits) -> Result<(), Box<dyn std::error::Error>> {
+    fn play_encoded_bits<T>(&self, data: &[T]) -> Result<(), Box<dyn std::error::Error>>
+    where
+        T: cpal::Sample,
+    {
         let err_fn = |err| println!("Error occurred: {}", err);
-        let config: cpal::StreamConfig = self.device.default_output_config()?.into();
-        let channels = config.channels as usize;
-        let output_stream = match data {
-            EncodedBits::I16(ref val) => {
-                let new_ref: Vec<i16> = val.clone();
-                self.device.build_output_stream(
-                    &config,
-                    move |data: &mut [i16], _: &cpal::OutputCallbackInfo| {
-                        write_data(data, channels, new_ref.clone().into_iter());
-                    },
-                    err_fn,
-                )?
-            }
-            EncodedBits::U16(val) => {
-                let new_ref: Vec<u16> = val.clone();
-                self.device.build_output_stream(
-                    &config,
-                    move |data: &mut [u16], _: &cpal::OutputCallbackInfo| {
-                        write_data(data, channels, new_ref.clone().into_iter());
-                    },
-                    err_fn,
-                )?
-            }
-            EncodedBits::F32(val) => {
-                let new_ref: Vec<f32> = val.clone();
-                self.device.build_output_stream(
-                    &config,
-                    move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                        write_data(data, channels, new_ref.clone().into_iter());
-                    },
-                    err_fn,
-                )?
-            }
-        };
+        let config: cpal::SupportedStreamConfig = self.device.default_output_config()?.into();
+        let channels = config.channels() as usize;
+
+        let output_stream = self
+            .device
+            .build_output_stream(&config.config(), write_data, err_fn);
         output_stream.play()?;
         std::thread::sleep(std::time::Duration::from_millis(1000));
         Ok(())
@@ -99,8 +74,7 @@ impl Sender for BirdIOutput {
 
     async fn broadcast_data(&self, info: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
         let fmt = self.device.default_output_config()?;
-        let data = encode_bits_with_format(info, &fmt.sample_format());
-        let transmit_data = package_bits(&data, &fmt.sample_format());
+        let data = encode_bits(info, &fmt.sample_format());
         self.play_encoded_bits(transmit_data)
     }
 }

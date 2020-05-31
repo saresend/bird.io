@@ -1,20 +1,17 @@
 // This contains logic for taking raw bits and encoding it into audio
 use cpal::SampleFormat;
 
-pub enum EncodedBits {
-    I16(Vec<i16>),
-    U16(Vec<u16>),
-    F32(Vec<f32>),
+pub(crate) fn encode_bits<T>(data: &[u8], fmt: &SampleFormat) -> Vec<T>
+where
+    T: cpal::Sample,
+{
+    let conv_data: Vec<u16> = data.iter().map(|x| *x as u16).collect();
+    conv_data.iter().map(|x| cpal::Sample::from(x)).collect()
 }
 
-pub fn encode_bits_with_format(data: &[u8], format: &SampleFormat) -> Vec<u8> {
-    data.clone().to_owned()
-}
-
-pub fn package_bits(data: &[u8], format: &SampleFormat) -> EncodedBits {
-    match format {
-        SampleFormat::I16 => EncodedBits::I16(data.iter().map(|x| *x as i16).collect()),
-        SampleFormat::U16 => EncodedBits::U16(data.iter().map(|x| *x as u16).collect()),
-        SampleFormat::F32 => EncodedBits::F32(data.iter().map(|x| (*x as f32).sin()).collect()),
-    }
+pub(crate) fn decode_bits<T>(samples: &[T]) -> Vec<u8>
+where
+    T: cpal::Sample,
+{
+    samples.iter().map(|x| x.to_u16() as u8).collect()
 }
