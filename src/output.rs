@@ -49,9 +49,9 @@ impl BirdIOutput {
         let mut sample_clock = 0.0;
         let config: cpal::SupportedStreamConfig = self.device.default_output_config().unwrap().into();
         let sample_rate = config.sample_rate().0 as f32;
-        for _ in 0..10000 {
+        for _ in 0..100000 {
             sample_clock = sample_clock + 1.0 % sample_rate; 
-            values.push((sample_clock * 440.0 * 2.0 * 3.14159 / sample_rate).sin());
+            values.push((sample_clock * 44000.0 * 2.0 * 3.14159 / sample_rate).sin());
         }
         let _ = self.play_encoded_bits(values);
     }
