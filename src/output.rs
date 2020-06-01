@@ -43,6 +43,19 @@ impl BirdIOutput {
             .expect("Can't find audio device on this system");
         BirdIOutput { device }
     }
+
+    pub fn play_low_freq(&self) {
+        let mut values = vec![];
+        let mut sample_clock = 0.0;
+        let config: cpal::SupportedStreamConfig = self.device.default_output_config().unwrap().into();
+        let sample_rate = config.sample_rate().0 as f32;
+        for _ in 0..10000 {
+            sample_clock = sample_clock + 1.0 % sample_rate; 
+            values.push((sample_clock * 440.0 * 2.0 * 3.14159 / sample_rate).sin());
+        }
+        let _ = self.play_encoded_bits(values);
+    }
+
     fn play_encoded_bits<T>(&self, data: Vec<T>) -> Result<(), Box<dyn std::error::Error>>
     where
         T: cpal::Sample,
@@ -102,8 +115,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_low_high_freq() {
+    async fn test_low_freq() {
         let driver = BirdIOutput::default();
-        let test_data = vec![]
+        let test_data = driver.play_low_freq();
     }
 }
