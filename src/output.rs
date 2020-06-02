@@ -1,6 +1,7 @@
 use crate::encoding::encode_bits;
 use async_trait::async_trait;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use crate::instrumentation;
 use cpal::Device;
 
 type Meters = f64;
@@ -54,6 +55,9 @@ impl BirdIOutput {
             sample_clock = sample_clock + 1.0 % sample_rate; 
             values.push((sample_clock * 44000.0 * 2.0 * 3.14159 / sample_rate).sin());
         }
+        #[cfg(debug_assertions)]
+        instrumentation::save_data(&values, 0);
+        
         let _ = self.play_encoded_bits(values);
     }
 

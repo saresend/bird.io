@@ -1,6 +1,6 @@
 // This contains logic for taking raw bits and encoding it into audio
 
-pub(crate) fn encode_bits<T>(data: &[u8]) -> Vec<T>
+pub fn encode_bits<T>(data: &[u8]) -> Vec<T>
 where
     T: cpal::Sample,
 {
