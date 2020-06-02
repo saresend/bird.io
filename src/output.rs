@@ -51,9 +51,9 @@ impl BirdIOutput {
         let config: cpal::SupportedStreamConfig = self.device.default_output_config().unwrap().into();
         let sample_rate = config.sample_rate().0 as f32;
         println!("{}", sample_rate);
-        for _ in 0..100000 {
+        for _ in 0..44100 {
             sample_clock = sample_clock + 1.0 % sample_rate; 
-            values.push((sample_clock * 44000.0 * 2.0 * 3.14159 / sample_rate).sin());
+            values.push((sample_clock * 1000.0 * 2.0 * 3.14159 / sample_rate).sin());
         }
         #[cfg(debug_assertions)]
         instrumentation::save_data(&values, 0);
