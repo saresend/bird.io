@@ -1,4 +1,4 @@
 mod encoding;
 pub mod input;
-mod instrumentation;
+pub mod instrumentation;
 pub mod output;
