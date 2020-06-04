@@ -18,7 +18,7 @@ where
         .margin(5)
         .x_label_area_size(30)
         .y_label_area_size(30)
-        .build_ranged(0f32..44100f32, -1f32..1f32)?;
+        .build_ranged(0f32..data.len() as f32, -1f32..1f32)?;
     chart.configure_mesh().draw()?;
     let data: Vec<(f32, f32)> = data
         .iter()

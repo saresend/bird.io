@@ -1,7 +1,7 @@
 use crate::encoding::encode_bits;
+use crate::instrumentation;
 use async_trait::async_trait;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use crate::instrumentation;
 use cpal::Device;
 use dasp::signal;
 use dasp::signal::Signal;
@@ -24,20 +24,6 @@ pub struct BirdIOutput {
     device: Device,
 }
 
-fn write_data<T>(output: &mut [T], channels: usize, samples: &[T])
-where
-    T: cpal::Sample,
-    T: std::marker::Send,
-{
-    for frame in output.chunks_mut(channels) {
-        for val in samples {
-            for sample in frame.iter_mut() {
-                *sample = *val;
-            }
-        }
-    }
-}
-
 impl BirdIOutput {
     pub fn default() -> Self {
         let host = cpal::default_host();
@@ -48,26 +34,40 @@ impl BirdIOutput {
     }
 
     pub fn play_tone(&self) {
-       let config: cpal::SupportedStreamConfig = self.device.default_output_config().unwrap().into(); 
-       let err_fn = |err| eprintln!("{}", err);
-       let o_stream = match config.sample_format() {
-            cpal::SampleFormat::F32 => {self.device.build_output_stream(&config.config(), BirdIOutput::write_tone::<f32>, err_fn)},
-            cpal::SampleFormat::I16 => {self.device.build_output_stream(&config.config(), BirdIOutput::write_tone::<i16>, err_fn)},
-            cpal::SampleFormat::U16 => {self.device.build_output_stream(&config.config(), BirdIOutput::write_tone::<u16>, err_fn)},
-       }.unwrap();
-       o_stream.play().unwrap();
-       std::thread::sleep(std::time::Duration::from_millis(3000));
-
-    }
-
-    fn write_tone<T: cpal::Sample>(data: &mut[T], _: &cpal::OutputCallbackInfo) {
-        let mut signal = signal::rate(44100.0).const_hz(10000.0).sine();
-        for sample in data.iter_mut() {
-           *sample = cpal::Sample::from(&(signal.next() as f32)); 
+        let config: cpal::SupportedStreamConfig =
+            self.device.default_output_config().unwrap().into();
+        let err_fn = |err| eprintln!("{}", err);
+        let o_stream = match config.sample_format() {
+            cpal::SampleFormat::F32 => self.device.build_output_stream(
+                &config.config(),
+                BirdIOutput::create_tone_fn::<f32>(10000.0),
+                err_fn,
+            ),
+            cpal::SampleFormat::I16 => self.device.build_output_stream(
+                &config.config(),
+                BirdIOutput::create_tone_fn::<i16>(10000.0),
+                err_fn,
+            ),
+            cpal::SampleFormat::U16 => self.device.build_output_stream(
+                &config.config(),
+                BirdIOutput::create_tone_fn::<u16>(10000.0),
+                err_fn,
+            ),
         }
+        .unwrap();
+        o_stream.play().unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(3000));
     }
-   
-  }
+
+    fn create_tone_fn<T: cpal::Sample>(freq: f64) -> impl Fn(&mut [T], &cpal::OutputCallbackInfo) {
+        return move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
+            let mut signal = signal::rate(44100.0).const_hz(freq).sine();
+            for sample in data.iter_mut() {
+                *sample = cpal::Sample::from(&(signal.next() as f32));
+            }
+        };
+    }
+}
 
 #[async_trait]
 impl BirdSender for BirdIOutput {
