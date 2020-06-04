@@ -47,54 +47,27 @@ impl BirdIOutput {
         BirdIOutput { device }
     }
 
-    pub fn test_dasp_sine(&self) {
-        let config: cpal::SupportedStreamConfig = self.device.default_output_config().unwrap().into();
-        let mut signal = signal::rate(config.sample_rate().0 as f64).const_hz(10000.0).sine();
-        let values: Vec<f32> = (0u32..10000u32).map(|_| signal.next() as f32).collect();
-        #[cfg(debug_assertions)]
-        instrumentation::save_data(&values, 1);
-        let _ = self.play_encoded_bits(values);
+    pub fn play_tone(&self) {
+       let config: cpal::SupportedStreamConfig = self.device.default_output_config().unwrap().into(); 
+       let err_fn = |err| eprintln!("{}", err);
+       let o_stream = match config.sample_format() {
+            cpal::SampleFormat::F32 => {self.device.build_output_stream(&config.config(), BirdIOutput::write_tone::<f32>, err_fn)},
+            cpal::SampleFormat::I16 => {self.device.build_output_stream(&config.config(), BirdIOutput::write_tone::<i16>, err_fn)},
+            cpal::SampleFormat::U16 => {self.device.build_output_stream(&config.config(), BirdIOutput::write_tone::<u16>, err_fn)},
+       }.unwrap();
+       o_stream.play().unwrap();
+       std::thread::sleep(std::time::Duration::from_millis(3000));
 
     }
 
-    pub fn play_low_freq(&self) {
-        let mut values = vec![];
-        let mut sample_clock = 0.0;
-        let config: cpal::SupportedStreamConfig = self.device.default_output_config().unwrap().into();
-        let sample_rate = config.sample_rate().0 as f32;
-        println!("{}", sample_rate);
-        for _ in 0..44100 {
-            sample_clock = sample_clock + 1.0 % sample_rate; 
-            values.push((sample_clock * 1000.0 * 2.0 * 3.14159 / sample_rate).sin());
+    fn write_tone<T: cpal::Sample>(data: &mut[T], _: &cpal::OutputCallbackInfo) {
+        let mut signal = signal::rate(44100.0).const_hz(1000.0).sine();
+        for sample in data.iter_mut() {
+           *sample = cpal::Sample::from(&(signal.next() as f32)); 
         }
-        #[cfg(debug_assertions)]
-        instrumentation::save_data(&values, 0);
-        
-        let _ = self.play_encoded_bits(values);
     }
-
-    fn play_encoded_bits<T>(&self, data: Vec<T>) -> Result<(), Box<dyn std::error::Error>>
-    where
-        T: cpal::Sample,
-        T: 'static,
-        T: std::marker::Send,
-    {
-        let err_fn = |err| println!("Error occurred: {}", err);
-        let config: cpal::SupportedStreamConfig = self.device.default_output_config()?.into();
-        let channels = config.channels() as usize;
-
-        let output_stream = self.device.build_output_stream(
-            &config.config(),
-            move |input: &mut [T], _: &cpal::OutputCallbackInfo| {
-                write_data::<T>(input, channels, &data)
-            },
-            err_fn,
-        )?;
-        output_stream.play()?;
-        std::thread::sleep(std::time::Duration::from_millis(1000));
-        Ok(())
-    }
-}
+   
+  }
 
 #[async_trait]
 impl BirdSender for BirdIOutput {
@@ -107,15 +80,15 @@ impl BirdSender for BirdIOutput {
         match fmt.sample_format() {
             cpal::SampleFormat::U16 => {
                 let data = encode_bits::<u16>(info);
-                self.play_encoded_bits(data)
+                Ok(())
             }
             cpal::SampleFormat::I16 => {
                 let data = encode_bits::<i16>(info);
-                self.play_encoded_bits(data)
+                Ok(())
             }
             cpal::SampleFormat::F32 => {
                 let data = encode_bits::<f32>(info);
-                self.play_encoded_bits(data)
+                Ok(())
             }
         }
     }
