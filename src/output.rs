@@ -61,7 +61,7 @@ impl BirdIOutput {
     }
 
     fn write_tone<T: cpal::Sample>(data: &mut[T], _: &cpal::OutputCallbackInfo) {
-        let mut signal = signal::rate(44100.0).const_hz(1000.0).sine();
+        let mut signal = signal::rate(44100.0).const_hz(10000.0).sine();
         for sample in data.iter_mut() {
            *sample = cpal::Sample::from(&(signal.next() as f32)); 
         }
