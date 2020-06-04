@@ -3,6 +3,8 @@ use async_trait::async_trait;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crate::instrumentation;
 use cpal::Device;
+use dasp::signal;
+use dasp::signal::Signal;
 
 type Meters = f64;
 
@@ -43,6 +45,16 @@ impl BirdIOutput {
             .default_output_device()
             .expect("Can't find audio device on this system");
         BirdIOutput { device }
+    }
+
+    pub fn test_dasp_sine(&self) {
+        let config: cpal::SupportedStreamConfig = self.device.default_output_config().unwrap().into();
+        let mut signal = signal::rate(config.sample_rate().0 as f64).const_hz(10000.0).sine();
+        let values: Vec<f32> = (0u32..10000u32).map(|_| signal.next() as f32).collect();
+        #[cfg(debug_assertions)]
+        instrumentation::save_data(&values, 1);
+        let _ = self.play_encoded_bits(values);
+
     }
 
     pub fn play_low_freq(&self) {
