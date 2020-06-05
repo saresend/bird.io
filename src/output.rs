@@ -1,5 +1,3 @@
-use crate::encoding::encode_bits;
-use crate::instrumentation;
 use async_trait::async_trait;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
