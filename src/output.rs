@@ -33,30 +33,42 @@ impl BirdIOutput {
         BirdIOutput { device }
     }
 
-    pub fn play_tone(&self) {
+    pub fn play_bits(&self, data: &[u8]) {
         let config: cpal::SupportedStreamConfig =
             self.device.default_output_config().unwrap().into();
         let err_fn = |err| eprintln!("{}", err);
         let o_stream = match config.sample_format() {
             cpal::SampleFormat::F32 => self.device.build_output_stream(
                 &config.config(),
-                BirdIOutput::create_tone_fn::<f32>(10000.0),
+                BirdIOutput::create_tonal_bit_encoding::<f32>(data.to_vec()),
                 err_fn,
             ),
             cpal::SampleFormat::I16 => self.device.build_output_stream(
                 &config.config(),
-                BirdIOutput::create_tone_fn::<i16>(10000.0),
+                BirdIOutput::create_tonal_bit_encoding::<i16>(data.to_vec()),
                 err_fn,
             ),
             cpal::SampleFormat::U16 => self.device.build_output_stream(
                 &config.config(),
-                BirdIOutput::create_tone_fn::<u16>(10000.0),
+                BirdIOutput::create_tonal_bit_encoding::<u16>(data.to_vec()),
                 err_fn,
             ),
         }
         .unwrap();
         o_stream.play().unwrap();
         std::thread::sleep(std::time::Duration::from_millis(3000));
+    }
+
+    fn create_tonal_bit_encoding<T: cpal::Sample>(bits: Vec<u8>) -> impl FnMut(&mut[T], &cpal::OutputCallbackInfo)
+    {
+        let mut sample_iterator = bits.into_iter();
+        return move |data: &mut [T], output: &cpal::OutputCallbackInfo| {
+            if sample_iterator.next() == Some(0) {
+                BirdIOutput::create_tone_fn::<T>(5000.0)(data, output);
+            } else {
+                BirdIOutput::create_tone_fn::<T>(10000.0)(data,output);
+            }
+        }
     }
 
     fn create_tone_fn<T: cpal::Sample>(freq: f64) -> impl Fn(&mut [T], &cpal::OutputCallbackInfo) {
@@ -79,15 +91,13 @@ impl BirdSender for BirdIOutput {
         let fmt = self.device.default_output_config()?;
         match fmt.sample_format() {
             cpal::SampleFormat::U16 => {
-                let data = encode_bits::<u16>(info);
+                
                 Ok(())
             }
             cpal::SampleFormat::I16 => {
-                let data = encode_bits::<i16>(info);
                 Ok(())
             }
             cpal::SampleFormat::F32 => {
-                let data = encode_bits::<f32>(info);
                 Ok(())
             }
         }
