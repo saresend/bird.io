@@ -15,7 +15,6 @@ pub trait Receiver {
     async fn receive_data(&self, callback: Callback) -> Result<(), Box<dyn std::error::Error>>;
     fn clear_listener(&self);
 }
-
 impl BirdIInput {
     pub fn default() -> BirdIInput {
         let host = cpal::default_host();
