@@ -57,16 +57,17 @@ impl BirdIOutput {
         std::thread::sleep(std::time::Duration::from_millis(3000));
     }
 
-    fn create_tonal_bit_encoding<T: cpal::Sample>(bits: Vec<u8>) -> impl FnMut(&mut[T], &cpal::OutputCallbackInfo)
-    {
+    fn create_tonal_bit_encoding<T: cpal::Sample>(
+        bits: Vec<u8>,
+    ) -> impl FnMut(&mut [T], &cpal::OutputCallbackInfo) {
         let mut sample_iterator = bits.into_iter();
         return move |data: &mut [T], output: &cpal::OutputCallbackInfo| {
             if sample_iterator.next() == Some(0) {
                 BirdIOutput::create_tone_fn::<T>(5000.0)(data, output);
             } else {
-                BirdIOutput::create_tone_fn::<T>(10000.0)(data,output);
+                BirdIOutput::create_tone_fn::<T>(10000.0)(data, output);
             }
-        }
+        };
     }
 
     fn create_tone_fn<T: cpal::Sample>(freq: f64) -> impl Fn(&mut [T], &cpal::OutputCallbackInfo) {
@@ -88,16 +89,9 @@ impl BirdSender for BirdIOutput {
     async fn broadcast_data(&self, info: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
         let fmt = self.device.default_output_config()?;
         match fmt.sample_format() {
-            cpal::SampleFormat::U16 => {
-                
-                Ok(())
-            }
-            cpal::SampleFormat::I16 => {
-                Ok(())
-            }
-            cpal::SampleFormat::F32 => {
-                Ok(())
-            }
+            cpal::SampleFormat::U16 => Ok(()),
+            cpal::SampleFormat::I16 => Ok(()),
+            cpal::SampleFormat::F32 => Ok(()),
         }
     }
 }
