@@ -44,21 +44,8 @@ impl BirdIInput {
          */
         let config: cpal::SupportedStreamConfig =
             self.device.default_input_config().unwrap().into();
-        let err_fn = |err| println!("{}", err);
-        let stream = match config.sample_format() {
-            cpal::SampleFormat::F32 => {
-                self.device
-                    .build_input_stream(&config.config(), self.write_fn::<f32>(), err_fn)
-            }
-            cpal::SampleFormat::I16 => {
-                self.device
-                    .build_input_stream(&config.config(), self.write_fn::<i16>(), err_fn)
-            }
-            cpal::SampleFormat::U16 => {
-                self.device
-                    .build_input_stream(&config.config(), self.write_fn::<u16>(), err_fn)
-            }
-        };
+        //let err_fn = |err| println!("{}", err);
+        todo!()
     }
 }
 
