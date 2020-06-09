@@ -11,7 +11,7 @@ pub struct NaiveFrequencyModulation {}
 
 impl Strategy for NaiveFrequencyModulation {
     fn encode_bits<T: cpal::Sample>(&self, data: &[u8]) -> Vec<T> {
-        let threshold = 20_000; // Take 20,000 samples per bit
+        let threshold = 1_000; // Take 20,000 samples per bit
         let mut low_signal = signal::rate(44100.0).const_hz(5000.0).sine();
         let mut high_signal = signal::rate(44100.0).const_hz(10000.0).sine();
         let mut result_vec: Vec<T> = vec![];
