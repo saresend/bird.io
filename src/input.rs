@@ -13,13 +13,6 @@ pub struct BirdIInput {
     thread_handle: Option<Thread>,
 }
 
-type Callback = fn(Vec<u8>);
-
-#[async_trait]
-pub trait Receiver {
-    async fn receive_data(&self, callback: Callback) -> Result<(), Box<dyn std::error::Error>>;
-    fn clear_listener(&self);
-}
 impl BirdIInput {
     pub fn default() -> BirdIInput {
         let host = cpal::default_host();
@@ -34,11 +27,15 @@ impl BirdIInput {
         }
     }
 
-    fn write_fn<T>(&self) -> impl FnMut(&[T], &cpal::InputCallbackInfo)
+    fn write_fn<T>(&self) -> impl FnMut(&[T], &cpal::InputCallbackInfo) + '_
     where
         T: cpal::Sample,
     {
-        return move |data: &[T], _: &cpal::InputCallbackInfo| {};
+        return move |data: &[T], _: &cpal::InputCallbackInfo| {
+            let values = encoding::decode_frame::<T>(data);
+            let mut buffer = self.buffer.lock().unwrap();
+            buffer.clear();
+        };
     }
 
     pub fn recv(&self) {

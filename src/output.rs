@@ -1,22 +1,8 @@
-use async_trait::async_trait;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
 use dasp::signal;
 use dasp::signal::Signal;
-
-type Meters = f64;
-
-pub struct ReceiverInfo {
-    pub id: String,
-    pub distance: Meters,
-}
-
-// This will contain logic for outbound data transmission
-#[async_trait]
-pub trait BirdSender {
-    async fn nearby_receivers(&self) -> Result<Vec<ReceiverInfo>, Box<dyn std::error::Error>>;
-    async fn broadcast_data(&self, info: &[u8]) -> Result<(), Box<dyn std::error::Error>>;
-}
+use crate::strategy::Strategy;
 
 pub struct BirdIOutput {
     device: Device,
@@ -31,30 +17,44 @@ impl BirdIOutput {
         BirdIOutput { device }
     }
 
-    pub fn play_bits(&self, data: &[u8]) {
+    pub fn play_bits<K: 'static + Strategy>(&self, data: &[u8], strategy: K) {
         let config: cpal::SupportedStreamConfig =
             self.device.default_output_config().unwrap().into();
         let err_fn = |err| eprintln!("{}", err);
         let o_stream = match config.sample_format() {
             cpal::SampleFormat::F32 => self.device.build_output_stream(
                 &config.config(),
-                BirdIOutput::create_tonal_bit_encoding::<f32>(data.to_vec()),
+                BirdIOutput::create_strategy_fn::<f32, K>(data.to_vec(), strategy),
                 err_fn,
             ),
             cpal::SampleFormat::I16 => self.device.build_output_stream(
                 &config.config(),
-                BirdIOutput::create_tonal_bit_encoding::<i16>(data.to_vec()),
+                BirdIOutput::create_strategy_fn::<f32, K>(data.to_vec(), strategy),
                 err_fn,
             ),
             cpal::SampleFormat::U16 => self.device.build_output_stream(
                 &config.config(),
-                BirdIOutput::create_tonal_bit_encoding::<u16>(data.to_vec()),
+                BirdIOutput::create_strategy_fn::<f32, K>(data.to_vec(), strategy),
                 err_fn,
             ),
         }
         .unwrap();
         o_stream.play().unwrap();
         std::thread::sleep(std::time::Duration::from_millis(3000));
+    }
+
+    fn create_strategy_fn<T: cpal::Sample, K: Strategy>(data: Vec<u8>, strategy: K) -> impl FnMut(&mut [T], &cpal::OutputCallbackInfo) 
+    {
+        let bits = strategy.encode_bits::<T>(&data);
+        let mut bit_iter = bits.into_iter();
+        return move | data: &mut [T], output: &cpal::OutputCallbackInfo| {
+            for sample in data.iter_mut() {
+                match bit_iter.next() {
+                    Some(value) => {*sample = cpal::Sample::from(&value)},
+                    None => { *sample = cpal::Sample::from(&0.0) },
+                }
+            }
+        }
     }
 
     fn create_tonal_bit_encoding<T: cpal::Sample>(
@@ -77,22 +77,6 @@ impl BirdIOutput {
                 *sample = cpal::Sample::from(&(signal.next() as f32));
             }
         };
-    }
-}
-
-#[async_trait]
-impl BirdSender for BirdIOutput {
-    async fn nearby_receivers(&self) -> Result<Vec<ReceiverInfo>, Box<dyn std::error::Error>> {
-        todo!()
-    }
-
-    async fn broadcast_data(&self, info: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
-        let fmt = self.device.default_output_config()?;
-        match fmt.sample_format() {
-            cpal::SampleFormat::U16 => Ok(()),
-            cpal::SampleFormat::I16 => Ok(()),
-            cpal::SampleFormat::F32 => Ok(()),
-        }
     }
 }
 

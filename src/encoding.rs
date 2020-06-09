@@ -14,3 +14,10 @@ where
 {
     samples.iter().map(|x| x.to_u16() as u8).collect()
 }
+
+pub(crate) fn decode_frame<T>(frame: &[T]) -> Vec<u8>
+where
+    T: cpal::Sample,
+{
+    todo!()
+}
