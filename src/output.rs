@@ -1,8 +1,8 @@
+use crate::strategy::Strategy;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
 use dasp::signal;
 use dasp::signal::Signal;
-use crate::strategy::Strategy;
 
 pub struct BirdIOutput {
     device: Device,
@@ -17,44 +17,51 @@ impl BirdIOutput {
         BirdIOutput { device }
     }
 
-    pub fn play_bits<K: 'static + Strategy>(&self, data: &[u8], strategy: K) {
+    pub fn play_bits<K: Strategy>(&self, data: &[u8], strategy: K) {
         let config: cpal::SupportedStreamConfig =
             self.device.default_output_config().unwrap().into();
         let err_fn = |err| eprintln!("{}", err);
         let o_stream = match config.sample_format() {
-            cpal::SampleFormat::F32 => self.device.build_output_stream(
-                &config.config(),
-                BirdIOutput::create_strategy_fn::<f32, K>(data.to_vec(), strategy),
-                err_fn,
-            ),
-            cpal::SampleFormat::I16 => self.device.build_output_stream(
-                &config.config(),
-                BirdIOutput::create_strategy_fn::<f32, K>(data.to_vec(), strategy),
-                err_fn,
-            ),
-            cpal::SampleFormat::U16 => self.device.build_output_stream(
-                &config.config(),
-                BirdIOutput::create_strategy_fn::<f32, K>(data.to_vec(), strategy),
-                err_fn,
-            ),
+            cpal::SampleFormat::F32 => {
+                let data = strategy.encode_bits::<f32>(data);
+                self.device.build_output_stream(
+                    &config.config(),
+                    BirdIOutput::create_fn::<f32>(data),
+                    err_fn,
+                )
+            }
+            cpal::SampleFormat::I16 => {
+                let data = strategy.encode_bits::<i16>(data);
+                self.device.build_output_stream(
+                    &config.config(),
+                    BirdIOutput::create_fn::<i16>(data),
+                    err_fn,
+                )
+            }
+            cpal::SampleFormat::U16 => {
+                let data = strategy.encode_bits::<i16>(data);
+                self.device.build_output_stream(
+                    &config.config(),
+                    BirdIOutput::create_fn::<i16>(data),
+                    err_fn,
+                )
+            }
         }
         .unwrap();
         o_stream.play().unwrap();
         std::thread::sleep(std::time::Duration::from_millis(3000));
     }
 
-    fn create_strategy_fn<T: cpal::Sample, K: Strategy>(data: Vec<u8>, strategy: K) -> impl FnMut(&mut [T], &cpal::OutputCallbackInfo) 
-    {
-        let bits = strategy.encode_bits::<T>(&data);
+    fn create_fn<T: cpal::Sample>(bits: Vec<T>) -> impl FnMut(&mut [T], &cpal::OutputCallbackInfo) {
         let mut bit_iter = bits.into_iter();
-        return move | data: &mut [T], output: &cpal::OutputCallbackInfo| {
+        return move |data: &mut [T], output: &cpal::OutputCallbackInfo| {
             for sample in data.iter_mut() {
                 match bit_iter.next() {
-                    Some(value) => {*sample = cpal::Sample::from(&value)},
-                    None => { *sample = cpal::Sample::from(&0.0) },
+                    Some(value) => *sample = cpal::Sample::from(&value),
+                    None => *sample = cpal::Sample::from(&0.0),
                 }
             }
-        }
+        };
     }
 
     fn create_tonal_bit_encoding<T: cpal::Sample>(
@@ -82,17 +89,18 @@ impl BirdIOutput {
 
 #[cfg(test)]
 mod tests {
+    //TODO: Write tests once the APIs start finalizing
     use crate::output::*;
-    #[tokio::test]
-    async fn sanity_sound_output() {
-        let driver = BirdIOutput::default();
-        let test_data = vec![200; 1000];
-        let _ = driver.broadcast_data(&test_data).await;
-    }
+    use crate::strategy::*;
 
-    #[tokio::test]
-    async fn test_low_freq() {
+    #[test]
+    fn test_sinusoid_output() {
         let driver = BirdIOutput::default();
-        let test_data = driver.play_low_freq();
+        let test_bits = [
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1,
+        ];
+        driver.play_bits(&test_bits, NaiveFrequencyModulation {});
     }
 }
