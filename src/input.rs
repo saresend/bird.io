@@ -1,4 +1,5 @@
 // This will contain logic for reading in input
+use crate::strategy::Strategy;
 use cpal::traits::{DeviceTrait, HostTrait};
 use cpal::Device;
 
@@ -15,10 +16,7 @@ impl BirdIInput {
         BirdIInput { device }
     }
 
-    pub fn recv(&self) {
-        /* Create our input stream, and pass in a function that
-         * then writes data to our buffer
-         */
+    pub fn recv<K: Strategy>(&self, strategy: K) {
         let _config: cpal::SupportedStreamConfig =
             self.device.default_input_config().unwrap().into();
         //let err_fn = |err| println!("{}", err);

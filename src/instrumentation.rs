@@ -11,7 +11,8 @@ pub fn visualize_pcm<T>(data: &[T], name: &str) -> Result<(), Box<dyn std::error
 where
     T: cpal::Sample,
 {
-    let root = BitMapBackend::new(name, (640, 480)).into_drawing_area();
+    let name_path = String::from("diagnostics/") + name;
+    let root = BitMapBackend::new(&name_path, (640, 480)).into_drawing_area();
     root.fill(&WHITE)?;
     let mut chart = ChartBuilder::on(&root)
         .caption("PCM data", ("sans-serif", 40).into_font())

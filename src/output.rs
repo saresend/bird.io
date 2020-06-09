@@ -1,8 +1,6 @@
 use crate::strategy::Strategy;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
-use dasp::signal;
-use dasp::signal::Signal;
 
 pub struct BirdIOutput {
     device: Device,
