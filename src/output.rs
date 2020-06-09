@@ -54,7 +54,7 @@ impl BirdIOutput {
 
     fn create_fn<T: cpal::Sample>(bits: Vec<T>) -> impl FnMut(&mut [T], &cpal::OutputCallbackInfo) {
         let mut bit_iter = bits.into_iter();
-        return move |data: &mut [T], output: &cpal::OutputCallbackInfo| {
+        return move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
             for sample in data.iter_mut() {
                 match bit_iter.next() {
                     Some(value) => *sample = cpal::Sample::from(&value),
@@ -90,17 +90,4 @@ impl BirdIOutput {
 #[cfg(test)]
 mod tests {
     //TODO: Write tests once the APIs start finalizing
-    use crate::output::*;
-    use crate::strategy::*;
-
-    #[test]
-    fn test_sinusoid_output() {
-        let driver = BirdIOutput::default();
-        let test_bits = [
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-            1,
-        ];
-        driver.play_bits(&test_bits, NaiveFrequencyModulation {});
-    }
 }
