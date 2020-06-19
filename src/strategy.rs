@@ -1,22 +1,21 @@
 // Contains the trait for strategy Logic
 //
 use dasp::{signal, Signal};
-use rustfft::{num_complex::Complex, num_traits::Zero, FFTplanner};
-
+use dft::{Operation, Plan};
 pub trait Strategy {
     fn encode_bits<T: cpal::Sample>(&self, data: &[u8]) -> Vec<T>;
-    fn decode_bits<T: cpal::Sample>(&mut self, data: &[T]) -> Vec<u8>;
+    fn decode_bit<T: cpal::Sample>(&mut self, data: &[T]) -> u8;
 }
 
-pub struct NaiveFrequencyModulation {
-    planner: FFTplanner<f32>,
-}
+pub struct NaiveFrequencyModulation {}
 
 impl NaiveFrequencyModulation {
     pub fn default() -> Self {
-        Self {
-            planner: FFTplanner::new(false),
-        }
+        Self {}
+    }
+    #[allow(dead_code, unused_variables)]
+    fn pad_vec(original: Vec<f32>) -> Vec<f32> {
+        todo!()
     }
 }
 
@@ -40,11 +39,12 @@ impl Strategy for NaiveFrequencyModulation {
         return result_vec;
     }
 
-    fn decode_bits<T: cpal::Sample>(&mut self, data: &[T]) -> Vec<u8> {
+    fn decode_bit<T: cpal::Sample>(&mut self, data: &[T]) -> u8 {
         let mut encoded_data: Vec<f32> = data.iter().map(|x| x.to_f32()).collect();
-        let mut output: Vec<Complex<f32>> = vec![Zero::zero(); encoded_data.len()];
-        let fft = self.planner.plan_fft(encoded_data.len());
-        fft.process(&mut encoded_data, &mut output);
+
+        // we then need to pad encoded_data to the nearest power of 2
+        let plan = Plan::new(Operation::Forward, encoded_data.len());
+        dft::transform(&mut encoded_data, &plan);
         todo!()
     }
 }

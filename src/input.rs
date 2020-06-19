@@ -21,7 +21,7 @@ impl BirdIInput {
         mut strategy: K,
     ) -> impl FnMut(&[T], &cpal::InputCallbackInfo) {
         return move |data: &[T], _: &cpal::InputCallbackInfo| {
-            let _result = strategy.decode_bits(data);
+            let _result = strategy.decode_bit(data);
         };
     }
 
