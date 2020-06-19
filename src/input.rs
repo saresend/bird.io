@@ -2,6 +2,7 @@
 use crate::strategy::Strategy;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
+use dft::{Operation, Plan};
 
 pub struct BirdIInput {
     device: Device,
@@ -16,13 +17,15 @@ impl BirdIInput {
         BirdIInput { device }
     }
 
-    pub fn create_handler_fn<T: cpal::Sample>() -> impl Fn(&[T], &cpal::InputCallbackInfo) {
+    pub fn create_handler_fn<K: Strategy, T: cpal::Sample>(
+        mut strategy: K,
+    ) -> impl FnMut(&[T], &cpal::InputCallbackInfo) {
         return move |data: &[T], _: &cpal::InputCallbackInfo| {
-            println!("{}", data.len());
+            let _result = strategy.decode_bits(data);
         };
     }
 
-    pub fn recv<K: Strategy>(&self, strategy: K) {
+    pub fn recv<K: 'static + Strategy + Send>(&self, strategy: K) {
         let config: cpal::SupportedStreamConfig =
             self.device.default_input_config().unwrap().into();
 
@@ -30,17 +33,17 @@ impl BirdIInput {
         let input_stream = match config.sample_format() {
             cpal::SampleFormat::F32 => self.device.build_input_stream(
                 &config.config(),
-                BirdIInput::create_handler_fn::<f32>(),
+                BirdIInput::create_handler_fn::<K, f32>(strategy),
                 err_fn,
             ),
             cpal::SampleFormat::I16 => self.device.build_input_stream(
                 &config.config(),
-                BirdIInput::create_handler_fn::<i16>(),
+                BirdIInput::create_handler_fn::<K, i16>(strategy),
                 err_fn,
             ),
             cpal::SampleFormat::U16 => self.device.build_input_stream(
                 &config.config(),
-                BirdIInput::create_handler_fn::<u16>(),
+                BirdIInput::create_handler_fn::<K, u16>(strategy),
                 err_fn,
             ),
         }
@@ -56,6 +59,6 @@ mod tests {
     #[test]
     fn sanity_input_test() {
         let receiver = input::BirdIInput::default();
-        receiver.recv(strategy::NaiveFrequencyModulation {});
+        receiver.recv(strategy::NaiveFrequencyModulation::default());
     }
 }

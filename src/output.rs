@@ -103,6 +103,6 @@ mod tests {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         ];
-        driver.play_bits(&test_bits, NaiveFrequencyModulation {});
+        driver.play_bits(&test_bits, NaiveFrequencyModulation::default());
     }
 }

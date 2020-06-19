@@ -1,21 +1,23 @@
 // Contains the trait for strategy Logic
 //
 use dasp::{signal, Signal};
-use dft::{Operation, Plan};
+use rustfft::{num_complex::Complex, num_traits::Zero, FFTplanner};
 
 pub trait Strategy {
     fn encode_bits<T: cpal::Sample>(&self, data: &[u8]) -> Vec<T>;
-    fn decode_bits<T: cpal::Sample>(&self, data: &[T]) -> Vec<u8>;
+    fn decode_bits<T: cpal::Sample>(&mut self, data: &[T]) -> Vec<u8>;
 }
 
-pub struct NaiveFrequencyModulation {}
+pub struct NaiveFrequencyModulation {
+    planner: FFTplanner<f32>,
+}
 
-fn decode_chunk(mut value: Vec<f32>) -> u8 {
-    let plan = Plan::new(Operation::Forward, value.len());
-    dft::transform(&mut value, &plan);
-    // Now in theory we have a frequency distribution for the given window
-
-    return 0;
+impl NaiveFrequencyModulation {
+    pub fn default() -> Self {
+        Self {
+            planner: FFTplanner::new(false),
+        }
+    }
 }
 
 impl Strategy for NaiveFrequencyModulation {
@@ -38,11 +40,11 @@ impl Strategy for NaiveFrequencyModulation {
         return result_vec;
     }
 
-    fn decode_bits<T: cpal::Sample>(&self, data: &[T]) -> Vec<u8> {
-        let encoded_data: Vec<f32> = data.iter().map(|x| x.to_f32()).collect();
-        let threshold = 1_000;
-        let owned_data: Vec<Vec<f32>> =
-            encoded_data.chunks(threshold).map(|x| x.to_vec()).collect();
-        owned_data.into_iter().map(|x| decode_chunk(x)).collect()
+    fn decode_bits<T: cpal::Sample>(&mut self, data: &[T]) -> Vec<u8> {
+        let mut encoded_data: Vec<f32> = data.iter().map(|x| x.to_f32()).collect();
+        let mut output: Vec<Complex<f32>> = vec![Zero::zero(); encoded_data.len()];
+        let fft = self.planner.plan_fft(encoded_data.len());
+        fft.process(&mut encoded_data, &mut output);
+        todo!()
     }
 }
