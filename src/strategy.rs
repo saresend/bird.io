@@ -13,8 +13,21 @@ impl NaiveFrequencyModulation {
     pub fn default() -> Self {
         Self {}
     }
-    #[allow(dead_code, unused_variables)]
-    fn pad_vec(original: Vec<f32>) -> Vec<f32> {
+
+    fn pad_vec(mut original: Vec<f32>) -> Vec<f32> {
+        let length = original.len();
+        let mut containing_size = 1;
+        while containing_size < length {
+            containing_size *= 2;
+        }
+        let remainder = containing_size - length;
+        for _ in 0..remainder {
+            original.push(0.0);
+        }
+        original
+    }
+
+    fn convert_to_bit(sample: Vec<f32>) -> u8 {
         todo!()
     }
 }
@@ -40,11 +53,13 @@ impl Strategy for NaiveFrequencyModulation {
     }
 
     fn decode_bit<T: cpal::Sample>(&mut self, data: &[T]) -> u8 {
-        let mut encoded_data: Vec<f32> = data.iter().map(|x| x.to_f32()).collect();
-
+        let encoded_data: Vec<f32> = data.iter().map(|x| x.to_f32()).collect();
+        let mut encoded_data = Self::pad_vec(encoded_data);
         // we then need to pad encoded_data to the nearest power of 2
         let plan = Plan::new(Operation::Forward, encoded_data.len());
         dft::transform(&mut encoded_data, &plan);
-        todo!()
+        println!("{:?}", encoded_data);
+        //NaiveFrequencyModulation::convert_to_bit(encoded_data);
+        0
     }
 }
