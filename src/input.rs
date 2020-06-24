@@ -60,5 +60,9 @@ mod tests {
     fn sanity_input_test() {
         let receiver = input::BirdIInput::default();
         receiver.recv(strategy::NaiveFrequencyModulation::default());
+        let output_data = instrumentation::get_data(0);
+        let pre_fft_data = instrumentation::get_data(1);
+        instrumentation::visualize_pcm(&output_data, "output.png");
+        instrumentation::visualize_pcm(&pre_fft_data, "pre_fft_output.png");
     }
 }
