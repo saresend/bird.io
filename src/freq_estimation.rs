@@ -8,6 +8,24 @@ fn diff_function(audio_sample: &[f64], tau_max: usize) -> Vec<f64> {
     }
     diff_vec
 }
+// should return a tau that gives the # of elements of offset in a given sample
+fn simple_diff_function(audio_sample: Vec<f64>) -> f64 {
+    let mut difference_function = vec![0.0; audio_sample.len()];
+    for tau in 1..audio_sample.len() {
+        for j in 0..(audio_sample.len() - tau - 1) {
+            let difference = audio_sample[j] - audio_sample[j + tau];
+            difference_function[tau] = difference * difference;
+        }
+    }
+    // Here, we want to look for the smallest values in our difference_function
+    let smallest = difference_function
+        .iter()
+        .enumerate()
+        .min_by(|&(_, item), &(_, item2)| item.partial_cmp(item2).unwrap());
+    let tau_value = smallest.unwrap().0;
+    let period = tau_value as f64 / audio_sample.len() as f64;
+    1.0 / period
+}
 
 fn cum_mean_norm_diff_fn(df: Vec<f64>) -> Vec<f64> {
     let mut iter1 = df.iter().clone();
@@ -49,14 +67,14 @@ pub fn compute_yin_for_frame(
 
 #[cfg(test)]
 mod tests {
-    use super::compute_yin_for_frame;
+    use super::simple_diff_function;
     use dasp::{signal, Signal};
     #[test]
     fn test_sine_frequency() {
         let sample_rate = 14400;
         let mut sine_sample = signal::rate(sample_rate as f64).const_hz(3000.0).sine();
         let sample_frame = (0..sample_rate).map(|_| sine_sample.next()).collect();
-        let result = compute_yin_for_frame(sample_frame, sample_rate, 1000, 5000);
-        assert_eq!(result, 3000);
+        let result = simple_diff_function(sample_frame);
+        assert_eq!(result, 3000.0);
     }
 }
