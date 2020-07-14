@@ -1,4 +1,4 @@
-fn diff_function(audio_sample: &[u8], tau_max: usize) -> Vec<f64> {
+fn diff_function(audio_sample: &[f64], tau_max: usize) -> Vec<f64> {
     let mut diff_vec = vec![0.0; tau_max];
     for tau in 1..tau_max {
         for j in 0..(audio_sample.len() - tau_max) {
@@ -34,7 +34,7 @@ fn get_pitch(cmdf: Vec<f64>, tau_min: usize, tau_max: usize) -> usize {
 }
 
 pub fn compute_yin_for_frame(
-    signal: Vec<u8>,
+    signal: Vec<f64>,
     sr: usize,
     freq_min: usize,
     freq_max: usize,
@@ -45,4 +45,18 @@ pub fn compute_yin_for_frame(
     let cmdf = cum_mean_norm_diff_fn(df);
 
     get_pitch(cmdf, tau_min, tau_max)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::compute_yin_for_frame;
+    use dasp::{signal, Signal};
+    #[test]
+    fn test_sine_frequency() {
+        let sample_rate = 14400;
+        let mut sine_sample = signal::rate(sample_rate as f64).const_hz(3000.0).sine();
+        let sample_frame = (0..sample_rate).map(|_| sine_sample.next()).collect();
+        let result = compute_yin_for_frame(sample_frame, sample_rate, 1000, 5000);
+        assert_eq!(result, 3000);
+    }
 }
