@@ -10,11 +10,12 @@ fn diff_function(audio_sample: &[f64], tau_max: usize) -> Vec<f64> {
 }
 // should return a tau that gives the # of elements of offset in a given sample
 fn simple_diff_function(audio_sample: Vec<f64>) -> f64 {
-    let mut difference_function = vec![0.0; audio_sample.len()];
-    for tau in 1..audio_sample.len() {
+    let max_tau = audio_sample.len() * 25 / 1000;
+    let mut difference_function = vec![0.0; max_tau];
+    for tau in 1..max_tau {
         for j in 0..(audio_sample.len() - tau - 1) {
             let difference = audio_sample[j] - audio_sample[j + tau];
-            difference_function[tau] = difference * difference;
+            difference_function[tau] += difference * difference;
         }
     }
     // Here, we want to look for the smallest values in our difference_function
@@ -23,7 +24,7 @@ fn simple_diff_function(audio_sample: Vec<f64>) -> f64 {
     let smallest = diff_fn_it
         .enumerate()
         .min_by(|&(_, item), &(_, item2)| item.partial_cmp(item2).unwrap());
-    let tau_value = smallest.unwrap().0;
+    let tau_value = smallest.unwrap().0 + 1;
     let period = tau_value as f64 / audio_sample.len() as f64;
     1.0 / period
 }
@@ -72,7 +73,7 @@ mod tests {
     use dasp::{signal, Signal};
     #[test]
     fn test_sine_frequency() {
-        let sample_rate = 14400;
+        let sample_rate = 1000;
         let mut sine_sample = signal::rate(sample_rate as f64).const_hz(3000.0).sine();
         let sample_frame = (0..sample_rate).map(|_| sine_sample.next()).collect();
         let result = simple_diff_function(sample_frame);
@@ -81,10 +82,11 @@ mod tests {
 
     #[test]
     fn test_small_sine() {
-        let sample_rate = 9;
-        let mut sine_sample = signal::rate(sample_rate as f64).const_hz(2.0).sine();
+        let sample_rate = 16;
+        let mut sine_sample = signal::rate(sample_rate as f64).const_hz(5.0).sine();
         let sample_frame = (0..sample_rate).map(|_| sine_sample.next()).collect();
+        println!("{:?}", sample_frame);
         let result = simple_diff_function(sample_frame);
-        assert_eq!(result, 2.0);
+        assert_eq!(result, 4.0);
     }
 }
