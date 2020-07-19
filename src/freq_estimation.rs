@@ -18,8 +18,9 @@ fn simple_diff_function(audio_sample: Vec<f64>) -> f64 {
         }
     }
     // Here, we want to look for the smallest values in our difference_function
-    let smallest = difference_function
-        .iter()
+    let mut diff_fn_it = difference_function.iter();
+    diff_fn_it.next();
+    let smallest = diff_fn_it
         .enumerate()
         .min_by(|&(_, item), &(_, item2)| item.partial_cmp(item2).unwrap());
     let tau_value = smallest.unwrap().0;
@@ -76,5 +77,14 @@ mod tests {
         let sample_frame = (0..sample_rate).map(|_| sine_sample.next()).collect();
         let result = simple_diff_function(sample_frame);
         assert_eq!(result, 3000.0);
+    }
+
+    #[test]
+    fn test_small_sine() {
+        let sample_rate = 9;
+        let mut sine_sample = signal::rate(sample_rate as f64).const_hz(2.0).sine();
+        let sample_frame = (0..sample_rate).map(|_| sine_sample.next()).collect();
+        let result = simple_diff_function(sample_frame);
+        assert_eq!(result, 2.0);
     }
 }
