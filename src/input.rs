@@ -2,7 +2,6 @@
 use crate::strategy::Strategy;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
-use dft::{Operation, Plan};
 
 pub struct BirdIInput {
     device: Device,

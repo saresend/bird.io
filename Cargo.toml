@@ -13,10 +13,9 @@ tokio = { version="0.2.21", features = ["macros", "rt-threaded"] }
 plotters = "0.2.14"
 lazy_static = "1.4.0"
 dasp = { version="0.11.0", features = ["signal"] }
-dft = "0.5.5"
-rustfft = "3.0.1"
-fftw = "0.6.0"
 ndarray = "0.13.1"
+yin = "0.1.0"
 
 [dev-dependencies]
 rand = "0.7.3"
+dasp = "0.11.0"

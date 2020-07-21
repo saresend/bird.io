@@ -2,7 +2,6 @@
 //
 use crate::instrumentation;
 use dasp::{signal, Signal};
-use dft::{Operation, Plan};
 
 pub trait Strategy {
     fn encode_bits<T: cpal::Sample>(&self, data: &[u8]) -> Vec<T>;
@@ -57,11 +56,7 @@ impl Strategy for NaiveFrequencyModulation {
 
     fn decode_bit<T: cpal::Sample>(&mut self, data: &[T]) -> u8 {
         let encoded_data: Vec<f32> = data.iter().map(|x| x.to_f32()).collect();
-        let mut encoded_data = Self::pad_vec(encoded_data);
-        instrumentation::save_data(&encoded_data, 1);
         // we then need to pad encoded_data to the nearest power of 2
-        let plan = Plan::new(Operation::Forward, encoded_data.len());
-        dft::transform(&mut encoded_data, &plan);
         NaiveFrequencyModulation::convert_to_bit(encoded_data)
     }
 }
