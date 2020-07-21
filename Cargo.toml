@@ -17,3 +17,6 @@ dft = "0.5.5"
 rustfft = "3.0.1"
 fftw = "0.6.0"
 ndarray = "0.13.1"
+
+[dev-dependencies]
+rand = "0.7.3"
