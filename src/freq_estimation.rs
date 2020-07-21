@@ -20,11 +20,7 @@ fn cmndf(raw_diff: &[f64]) -> Vec<f64> {
             Some(result)
         })
         .collect();
-    let thing: Vec<f32> = cmndf_diff.clone().iter().map(|x| *x as f32).collect();
     cmndf_diff.insert(0, 1.0);
-    println!("{:?}", &raw_diff[1..]);
-    println!("{:?}", cmndf_diff);
-    save_data(&thing, 2);
     cmndf_diff
 }
 
@@ -48,12 +44,10 @@ fn convert_to_frequency(sample_period: usize, sample_rate: usize) -> f64 {
 }
 
 // should return a tau that gives the # of elements of offset in a given sample
-fn compute_sample_frequency(audio_sample: Vec<f64>) -> f64 {
-    let tau_max = audio_sample.len() * 25 / 1000;
-    let tau_max = 50;
+fn compute_sample_frequency(audio_sample: Vec<f64>, tau_max: usize) -> f64 {
     let diff_fn = diff_function(&audio_sample, tau_max);
     let cmndf = cmndf(&diff_fn);
-    let sample_period = compute_diff_min(&cmndf, tau_max, 0.1);
+    let sample_period = compute_diff_min(&cmndf, tau_max, 0.15);
     convert_to_frequency(sample_period, audio_sample.len())
 }
 
@@ -68,7 +62,7 @@ mod tests {
         let sample_rate = 120;
         let mut sine_sample = signal::rate(sample_rate as f64).const_hz(3.0).sine();
         let sample_frame: Vec<f64> = (0..sample_rate).map(|_| sine_sample.next()).collect();
-        let result = compute_sample_frequency(sample_frame);
+        let result = compute_sample_frequency(sample_frame, 50);
         let cmndf_data = get_data(2);
         visualize_pcm(&cmndf_data, "cmndf_output.png");
         assert_eq!(result, 3.0);
@@ -92,7 +86,7 @@ mod tests {
         let sample_frame: Vec<f64> = (0..sample_rate)
             .map(|_| sine_sample.next() + rng.gen::<f64>())
             .collect();
-        let result = compute_sample_frequency(sample_frame);
+        let result = compute_sample_frequency(sample_frame, 50);
         assert_eq!(result, 3.0);
     }
 
@@ -105,7 +99,7 @@ mod tests {
         let sample_frame: Vec<f64> = (0..sample_rate)
             .map(|_| sine_sample.next() + rng.gen::<f64>() * 0.005)
             .collect();
-        let result = compute_sample_frequency(sample_frame);
+        let result = compute_sample_frequency(sample_frame, 4000);
         assert_eq!(result, 441.0);
     }
 
@@ -157,7 +151,7 @@ mod tests {
         let sample_rate = 44100;
         let mut sine_sample = signal::rate(sample_rate as f64).const_hz(8820.0).sine();
         let sample_frame: Vec<f64> = (0..sample_rate).map(|_| sine_sample.next()).collect();
-        let freq = compute_sample_frequency(sample_frame);
+        let freq = compute_sample_frequency(sample_frame, 4000);
         assert_eq!(freq, 8820.0);
     }
 
@@ -166,7 +160,7 @@ mod tests {
         let sample_rate = 3000;
         let mut sine_sample = signal::rate(sample_rate as f64).const_hz(300.0).sine();
         let sample_frame = (0..sample_rate).map(|_| sine_sample.next()).collect();
-        let result = compute_sample_frequency(sample_frame);
+        let result = compute_sample_frequency(sample_frame, 300);
         assert_eq!(result, 300.0);
     }
 }
