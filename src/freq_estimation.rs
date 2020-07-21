@@ -9,6 +9,20 @@ fn diff_function(audio_sample: &[f64], tau_max: usize) -> Vec<f64> {
     diff_function
 }
 
+fn cmndf(raw_diff: &[f64]) -> Vec<f64> {
+    let mut denom: Vec<f64> = raw_diff[1..]
+        .iter()
+        .enumerate()
+        .scan(0.0, |state, x| {
+            *state = *state + x.1;
+            let result = x.1 * x.0 as f64 / *state;
+            Some(result)
+        })
+        .collect();
+    denom.insert(0, 1.0);
+    denom
+}
+
 fn compute_diff_min(diff_fn: &[f64], max_tau: usize, harm_threshold: f64) -> usize {
     let mut tau = 1;
     while tau < max_tau {
