@@ -12,56 +12,25 @@ impl BirdListener {
         Self {}
     }
 
-    fn setup_receiver(&self) -> Result<(), Box<dyn std::error::Error>> {
+    fn create_stream_with_config(
+        &self,
+        config: cpal::SupportedStreamConfig,
+    ) -> Result<cpal::Stream, Box<dyn std::error::Error>> {
+        todo!()
+    }
+
+    fn setup_receiver(&self) -> Result<cpal::Stream, Box<dyn std::error::Error>> {
         let device = cpal::default_host()
             .default_input_device()
             .ok_or(DeviceNotFoundError)?;
         let config = device.default_input_config()?;
-
-        todo!()
+        let stream = self.create_stream_with_config(config)?;
+        Ok(stream)
     }
 
     fn open_receive<T>(sender: Sender<T>) {
         todo!()
     }
-
-    /* Potentially useful reference code
-    pub fn create_handler_fn<K: Strategy, T: cpal::Sample>(
-        mut strategy: K,
-    ) -> impl FnMut(&[T], &cpal::InputCallbackInfo) {
-        return move |data: &[T], _: &cpal::InputCallbackInfo| {
-            let _result = strategy.decode_bits(data);
-        };
-    }
-
-
-    pub fn recv<K: 'static + Strategy + Send>(&self, strategy: K) {
-        let config: cpal::SupportedStreamConfig =
-            self.device.default_input_config().unwrap().into();
-
-        let err_fn = |err| println!("{}", err);
-        let input_stream = match config.sample_format() {
-            cpal::SampleFormat::F32 => self.device.build_input_stream(
-                &config.config(),
-                BirdIInput::create_handler_fn::<K, f32>(strategy),
-                err_fn,
-            ),
-            cpal::SampleFormat::I16 => self.device.build_input_stream(
-                &config.config(),
-                BirdIInput::create_handler_fn::<K, i16>(strategy),
-                err_fn,
-            ),
-            cpal::SampleFormat::U16 => self.device.build_input_stream(
-                &config.config(),
-                BirdIInput::create_handler_fn::<K, u16>(strategy),
-                err_fn,
-            ),
-        }
-        .unwrap();
-        input_stream.play().unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(1000));
-    }
-    */
 }
 use std::thread;
 impl BirdReceiver<NaiveFrequencyModulation> for BirdListener {
