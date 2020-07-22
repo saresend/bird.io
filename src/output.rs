@@ -1,4 +1,4 @@
-use crate::strategy::Strategy;
+use crate::traits::Strategy;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
 
@@ -64,45 +64,9 @@ impl BirdIOutput {
             }
         };
     }
-    /* Potentially useful reference code
-    fn create_tonal_bit_encoding<T: cpal::Sample>(
-        bits: Vec<u8>,
-    ) -> impl FnMut(&mut [T], &cpal::OutputCallbackInfo) {
-        let mut sample_iterator = bits.into_iter();
-        return move |data: &mut [T], output: &cpal::OutputCallbackInfo| {
-            if sample_iterator.next() == Some(0) {
-                BirdIOutput::create_tone_fn::<T>(5000.0)(data, output);
-            } else {
-                BirdIOutput::create_tone_fn::<T>(10000.0)(data, output);
-            }
-        };
-    }
-
-    fn create_tone_fn<T: cpal::Sample>(freq: f64) -> impl Fn(&mut [T], &cpal::OutputCallbackInfo) {
-        return move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
-            let mut signal = signal::rate(44100.0).const_hz(freq).sine();
-            for sample in data.iter_mut() {
-                *sample = cpal::Sample::from(&(signal.next() as f32));
-            }
-        };
-    }
-    */
 }
 
 #[cfg(test)]
 mod tests {
     //TODO: Write tests once the APIs start finalizing
-    use crate::output::*;
-    use crate::strategy::*;
-
-    #[test]
-    fn test_sinusoid_output() {
-        let driver = BirdIOutput::default();
-        let test_bits = [
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        ];
-        driver.play_bits(&test_bits, NaiveFrequencyModulation::default());
-    }
 }
