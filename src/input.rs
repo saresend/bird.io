@@ -12,45 +12,41 @@ impl BirdListener {
         Self {}
     }
 
-    fn create_input_handler<'a, T, K>(
-        &self,
-        strategy: K,
-    ) -> impl FnMut(&[T], &cpal::InputCallbackInfo) + 'a
+    fn create_input_handler<'a, T>(&self) -> impl FnMut(&[T], &cpal::InputCallbackInfo)
     where
         T: cpal::Sample,
-        K: Strategy + 'a,
     {
-        |values, thing| {}
+        |_values, _thing| {}
     }
 
     fn create_error_handler(&self) -> impl Fn(cpal::StreamError) {
         |err| println!("{:?}", err)
     }
 
-    fn create_stream_with_config<'a, T>(
+    fn create_stream_with_config<'a, S>(
         &self,
         device: cpal::Device,
         config: cpal::SupportedStreamConfig,
-        strategy: T,
+        _strategy: S,
     ) -> Result<cpal::Stream, Box<dyn std::error::Error>>
     where
-        T: Strategy + 'a,
+        S: Strategy + 'a,
     {
         let error_fn = self.create_error_handler();
         let stream = match config.sample_format() {
             cpal::SampleFormat::F32 => device.build_input_stream(
                 &config.config(),
-                self.create_input_handler::<f32, T>(strategy),
+                self.create_input_handler::<f32>(),
                 error_fn,
             )?,
             cpal::SampleFormat::I16 => device.build_input_stream(
                 &config.config(),
-                self.create_input_handler::<i16, T>(strategy),
+                self.create_input_handler::<i16>(),
                 error_fn,
             )?,
             cpal::SampleFormat::U16 => device.build_input_stream(
                 &config.config(),
-                self.create_input_handler::<u16, T>(strategy),
+                self.create_input_handler::<u16>(),
                 error_fn,
             )?,
         };
