@@ -33,11 +33,11 @@ impl NaiveFrequencyModulation {
 }
 
 impl Strategy for NaiveFrequencyModulation {
-    fn create_encoding(&self) -> Box<dyn Fn(&[u8]) -> Vec<f64>> {
+    fn create_encoding(&self) -> Box<dyn Fn(&[u8]) -> Vec<f64> + Send> {
         Box::new(|data| vec![])
     }
 
-    fn create_decoding(&self) -> Box<dyn Fn(&[f64]) -> Vec<u8>> {
+    fn create_decoding(&self) -> Box<dyn Fn(&[f64]) -> Vec<u8> + Send> {
         Box::new(|data| vec![])
     }
 

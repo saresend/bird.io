@@ -14,12 +14,15 @@ impl BirdListener {
 
     fn create_input_handler<'a, T>(
         &self,
-        decoder: Box<dyn Fn(&[f64]) -> Vec<u8>>,
+        decoder: Box<dyn Fn(&[f64]) -> Vec<u8> + Send>,
     ) -> impl FnMut(&[T], &cpal::InputCallbackInfo)
     where
         T: cpal::Sample,
     {
-        |_values, _thing| {}
+        move |values, _| {
+            let raw_values: Vec<f64> = values.iter().map(|x| x.to_f32() as f64).collect();
+            let decoded = decoder(&raw_values);
+        }
     }
 
     fn create_error_handler(&self) -> impl Fn(cpal::StreamError) {

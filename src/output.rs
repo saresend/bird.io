@@ -14,7 +14,7 @@ impl BirdIOutput {
             .expect("Can't find audio device on this system");
         BirdIOutput { device }
     }
-
+    /*
     pub fn play_bits<K: Strategy>(&self, data: &[u8], strategy: K) {
         let config: cpal::SupportedStreamConfig =
             self.device.default_output_config().unwrap().into();
@@ -64,6 +64,7 @@ impl BirdIOutput {
             }
         };
     }
+    */
 }
 
 #[cfg(test)]
