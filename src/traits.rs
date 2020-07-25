@@ -1,8 +1,8 @@
 use std::sync::mpsc::Receiver;
 /// This handles the strategy interface that will be used to handle all bit encoding and decoding
 pub trait Strategy {
-    fn encode_bits<T: cpal::Sample>(&self, data: &[u8]) -> Vec<T>;
-    fn decode_bits<T: cpal::Sample>(&mut self, data: &[T]) -> Vec<u8>;
+    fn create_decoding(&self) -> Box<dyn Fn(&[f64]) -> Vec<u8>>;
+    fn create_encoding(&self) -> Box<dyn Fn(&[u8]) -> Vec<f64>>;
 }
 /// This should handle all methods associated with a given implementation of a receiver
 /// Here the type parameter

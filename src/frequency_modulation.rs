@@ -33,6 +33,15 @@ impl NaiveFrequencyModulation {
 }
 
 impl Strategy for NaiveFrequencyModulation {
+    fn create_encoding(&self) -> Box<dyn Fn(&[u8]) -> Vec<f64>> {
+        Box::new(|data| vec![])
+    }
+
+    fn create_decoding(&self) -> Box<dyn Fn(&[f64]) -> Vec<u8>> {
+        Box::new(|data| vec![])
+    }
+
+    /* this is just here for reference
     fn encode_bits<T: cpal::Sample>(&self, data: &[u8]) -> Vec<T> {
         let mut low_signal = signal::rate(44100.0)
             .const_hz(self.low_bit_frequency)
@@ -64,4 +73,5 @@ impl Strategy for NaiveFrequencyModulation {
             .map(|x| self.convert_to_bit(x))
             .collect()
     }
+    */
 }

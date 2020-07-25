@@ -12,7 +12,10 @@ impl BirdListener {
         Self {}
     }
 
-    fn create_input_handler<'a, T>(&self) -> impl FnMut(&[T], &cpal::InputCallbackInfo)
+    fn create_input_handler<'a, T>(
+        &self,
+        decoder: Box<dyn Fn(&[f64]) -> Vec<u8>>,
+    ) -> impl FnMut(&[T], &cpal::InputCallbackInfo)
     where
         T: cpal::Sample,
     {
@@ -27,26 +30,27 @@ impl BirdListener {
         &self,
         device: cpal::Device,
         config: cpal::SupportedStreamConfig,
-        _strategy: S,
+        strategy: S,
     ) -> Result<cpal::Stream, Box<dyn std::error::Error>>
     where
         S: Strategy + 'a,
     {
         let error_fn = self.create_error_handler();
+        let decoding_fn = strategy.create_decoding();
         let stream = match config.sample_format() {
             cpal::SampleFormat::F32 => device.build_input_stream(
                 &config.config(),
-                self.create_input_handler::<f32>(),
+                self.create_input_handler::<f32>(decoding_fn),
                 error_fn,
             )?,
             cpal::SampleFormat::I16 => device.build_input_stream(
                 &config.config(),
-                self.create_input_handler::<i16>(),
+                self.create_input_handler::<i16>(decoding_fn),
                 error_fn,
             )?,
             cpal::SampleFormat::U16 => device.build_input_stream(
                 &config.config(),
-                self.create_input_handler::<u16>(),
+                self.create_input_handler::<u16>(decoding_fn),
                 error_fn,
             )?,
         };
