@@ -33,11 +33,34 @@ impl NaiveFrequencyModulation {
 }
 
 impl Strategy for NaiveFrequencyModulation {
-    fn create_encoding(&self) -> Box<dyn Fn(&[u8]) -> Vec<f64> + Send> {
-        Box::new(|data| vec![])
+    fn create_encoding(&self) -> Box<dyn FnMut(&[u8]) -> Vec<f64> + Send> {
+        let mut low_signal = signal::rate(44100.0)
+            .const_hz(self.low_bit_frequency)
+            .sine();
+
+        let mut high_signal = signal::rate(44100.0)
+            .const_hz(self.high_bit_frequency)
+            .sine();
+        let sample_count = self.sample_count;
+        Box::new(move |data| {
+            let mut result_vec = vec![];
+            for val in data {
+                if val != &0 {
+                    for _ in 0..sample_count {
+                        result_vec.push(high_signal.next());
+                    }
+                } else {
+                    for _ in 0..sample_count {
+                        result_vec.push(low_signal.next());
+                    }
+                }
+            }
+
+            result_vec
+        })
     }
 
-    fn create_decoding(&self) -> Box<dyn Fn(&[f64]) -> Vec<u8> + Send> {
+    fn create_decoding(&self) -> Box<dyn FnMut(&[f64]) -> Vec<u8> + Send> {
         Box::new(|data| vec![])
     }
 

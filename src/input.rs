@@ -14,7 +14,7 @@ impl BirdListener {
 
     fn create_input_handler<'a, T>(
         &self,
-        decoder: Box<dyn Fn(&[f64]) -> Vec<u8> + Send>,
+        mut decoder: Box<dyn FnMut(&[f64]) -> Vec<u8> + Send>,
     ) -> impl FnMut(&[T], &cpal::InputCallbackInfo)
     where
         T: cpal::Sample,
