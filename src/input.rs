@@ -14,6 +14,7 @@ impl BirdListener {
 
     fn create_input_handler<'a, T>(
         &self,
+        sender: Sender<Vec<u8>>,
         mut decoder: Box<dyn FnMut(&[f64]) -> Vec<u8> + Send>,
     ) -> impl FnMut(&[T], &cpal::InputCallbackInfo)
     where
@@ -22,6 +23,7 @@ impl BirdListener {
         move |values, _| {
             let raw_values: Vec<f64> = values.iter().map(|x| x.to_f32() as f64).collect();
             let decoded = decoder(&raw_values);
+            sender.send(decoded);
         }
     }
 
@@ -33,6 +35,7 @@ impl BirdListener {
         &self,
         device: cpal::Device,
         config: cpal::SupportedStreamConfig,
+        sender: Sender<Vec<u8>>,
         strategy: S,
     ) -> Result<cpal::Stream, Box<dyn std::error::Error>>
     where
@@ -43,24 +46,28 @@ impl BirdListener {
         let stream = match config.sample_format() {
             cpal::SampleFormat::F32 => device.build_input_stream(
                 &config.config(),
-                self.create_input_handler::<f32>(decoding_fn),
+                self.create_input_handler::<f32>(sender, decoding_fn),
                 error_fn,
             )?,
             cpal::SampleFormat::I16 => device.build_input_stream(
                 &config.config(),
-                self.create_input_handler::<i16>(decoding_fn),
+                self.create_input_handler::<i16>(sender, decoding_fn),
                 error_fn,
             )?,
             cpal::SampleFormat::U16 => device.build_input_stream(
                 &config.config(),
-                self.create_input_handler::<u16>(decoding_fn),
+                self.create_input_handler::<u16>(sender, decoding_fn),
                 error_fn,
             )?,
         };
         Ok(stream)
     }
 
-    fn setup_receiver<'a, T>(&self, strategy: T) -> Result<cpal::Stream, Box<dyn std::error::Error>>
+    fn setup_receiver<'a, T>(
+        &self,
+        strategy: T,
+        sender: Sender<Vec<u8>>,
+    ) -> Result<cpal::Stream, Box<dyn std::error::Error>>
     where
         T: Strategy + 'a,
     {
@@ -68,26 +75,22 @@ impl BirdListener {
             .default_input_device()
             .ok_or(DeviceNotFoundError)?;
         let config = device.default_input_config()?;
-        let stream = self.create_stream_with_config(device, config, strategy)?;
+        let stream = self.create_stream_with_config(device, config, sender, strategy)?;
         Ok(stream)
     }
 
-    fn open_receive<T>(sender: Sender<T>) {
+    fn open_receive(sender: cpal::Stream) {
         todo!()
     }
 }
-use std::thread;
 impl BirdReceiver<NaiveFrequencyModulation> for BirdListener {
-    type BitFormat = u8;
+    type BitFormat = Vec<u8>;
     fn start<'a>(
         &self,
         strategy: NaiveFrequencyModulation,
     ) -> Result<Receiver<Self::BitFormat>, Box<dyn std::error::Error>> {
         let (sender, receiver) = channel::<Self::BitFormat>();
-        let play_stream = self.setup_receiver(strategy);
-        let handler = thread::spawn(move || {
-            Self::open_receive(sender);
-        });
+        let play_stream = self.setup_receiver(strategy, sender)?;
 
         todo!()
     }
