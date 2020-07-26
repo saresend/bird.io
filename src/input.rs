@@ -137,8 +137,18 @@ impl BirdListenerInternal {
         }
         Ok(())
     }
+}
 
-    fn close(&self) -> Result<(), Box<dyn std::error::Error>> {
-        todo!()
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn sanity_test_receiver_trait() {
+        let mut bl = BirdListener::default();
+        let strategy = NaiveFrequencyModulation::default();
+        let r1 = bl.start(strategy);
+        assert!(r1.is_ok());
+        let r2 = bl.close();
+        assert!(r2.is_ok());
     }
 }
