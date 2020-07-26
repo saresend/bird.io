@@ -1,13 +1,50 @@
 // This will contain logic for reading in input
-use crate::errors::DeviceNotFoundError;
+use crate::errors::{DeviceNotFoundError, StreamCloseError};
 use crate::frequency_modulation::NaiveFrequencyModulation;
 use crate::traits::{BirdReceiver, Strategy};
-use cpal::traits::{DeviceTrait, HostTrait};
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use std::sync::mpsc::{channel, Receiver, Sender};
 
-pub struct BirdListener {}
+pub struct BirdListener {
+    kill_sender: Option<Sender<bool>>,
+}
 
 impl BirdListener {
+    pub fn default() -> Self {
+        Self { kill_sender: None }
+    }
+}
+
+impl BirdReceiver<NaiveFrequencyModulation> for BirdListener {
+    type BitFormat = Vec<u8>;
+    fn start(
+        &mut self,
+        strategy: NaiveFrequencyModulation,
+    ) -> Result<Receiver<Self::BitFormat>, Box<dyn std::error::Error>> {
+        let (data_sender, data_receiver) = channel();
+        let (kill_sender, kill_receiver) = channel();
+        self.kill_sender = Some(kill_sender);
+        std::thread::spawn(|| {
+            let bli = BirdListenerInternal::default();
+            let _ = bli.start(data_sender, kill_receiver, strategy);
+        });
+        Ok(data_receiver)
+    }
+
+    fn close(self) -> Result<(), Box<dyn std::error::Error>> {
+        match self.kill_sender {
+            Some(sender) => {
+                sender.send(false)?;
+                Ok(())
+            }
+            None => Err(Box::new(StreamCloseError)),
+        }
+    }
+}
+
+struct BirdListenerInternal {}
+
+impl BirdListenerInternal {
     pub fn default() -> Self {
         Self {}
     }
@@ -23,7 +60,7 @@ impl BirdListener {
         move |values, _| {
             let raw_values: Vec<f64> = values.iter().map(|x| x.to_f32() as f64).collect();
             let decoded = decoder(&raw_values);
-            sender.send(decoded);
+            sender.send(decoded).unwrap();
         }
     }
 
@@ -78,21 +115,27 @@ impl BirdListener {
         let stream = self.create_stream_with_config(device, config, sender, strategy)?;
         Ok(stream)
     }
-
-    fn open_receive(sender: cpal::Stream) {
-        todo!()
-    }
 }
-impl BirdReceiver<NaiveFrequencyModulation> for BirdListener {
-    type BitFormat = Vec<u8>;
-    fn start<'a>(
-        &self,
-        strategy: NaiveFrequencyModulation,
-    ) -> Result<Receiver<Self::BitFormat>, Box<dyn std::error::Error>> {
-        let (sender, receiver) = channel::<Self::BitFormat>();
-        let play_stream = self.setup_receiver(strategy, sender)?;
 
-        todo!()
+impl BirdListenerInternal {
+    // Idea is that start can be used within the thread to handle blocking
+    // as well as conclusion of receiving input.
+    fn start<'a, T>(
+        &self,
+        sender: Sender<Vec<u8>>,
+        receiver: Receiver<bool>,
+        strategy: T,
+    ) -> Result<(), Box<dyn std::error::Error>>
+    where
+        T: Strategy,
+    {
+        let play_stream = self.setup_receiver(strategy, sender)?;
+        play_stream.play()?;
+        let value = receiver.recv()?;
+        if value {
+            return Ok(());
+        }
+        Ok(())
     }
 
     fn close(&self) -> Result<(), Box<dyn std::error::Error>> {

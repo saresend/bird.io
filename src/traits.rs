@@ -11,8 +11,11 @@ where
     T: Strategy,
 {
     type BitFormat;
-    fn start(&self, strategy: T) -> Result<Receiver<Self::BitFormat>, Box<dyn std::error::Error>>;
-    fn close(&self) -> Result<(), Box<dyn std::error::Error>>;
+    fn start(
+        &mut self,
+        strategy: T,
+    ) -> Result<Receiver<Self::BitFormat>, Box<dyn std::error::Error>>;
+    fn close(self) -> Result<(), Box<dyn std::error::Error>>;
 }
 
 /// The BirdSender trait provides all the methods associated with a given
