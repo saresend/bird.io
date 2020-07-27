@@ -61,7 +61,8 @@ impl Strategy for NaiveFrequencyModulation {
     }
 
     fn create_decoding(&self) -> Box<dyn FnMut(&[f64]) -> Vec<u8> + Send> {
-        Box::new(|data| vec![])
+        let estimate = self.estimator.clone();
+        Box::new(move |data| {})
     }
 
     /* this is just here for reference

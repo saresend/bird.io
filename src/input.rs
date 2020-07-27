@@ -76,7 +76,7 @@ impl BirdListenerInternal {
         strategy: S,
     ) -> Result<cpal::Stream, Box<dyn std::error::Error>>
     where
-        S: Strategy + 'a,
+        S: Strategy,
     {
         let error_fn = self.create_error_handler();
         let decoding_fn = strategy.create_decoding();
