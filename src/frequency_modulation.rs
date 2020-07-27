@@ -2,6 +2,7 @@ use crate::traits::Strategy;
 use dasp::{signal, Signal};
 use yin::Yin;
 
+#[derive(Clone)]
 pub struct NaiveFrequencyModulation {
     estimator: Yin,
     low_bit_frequency: f64,
@@ -61,41 +62,14 @@ impl Strategy for NaiveFrequencyModulation {
     }
 
     fn create_decoding(&self) -> Box<dyn FnMut(&[f64]) -> Vec<u8> + Send> {
-        let estimate = self.estimator.clone();
-        Box::new(move |data| {})
+        //TODO: Fix the cloning thing. We might actually be able to change the API to actually
+        //consume the Strategy, since we will probably only need to produce 1 per?
+        let new_freq_mod = self.clone();
+        Box::new(move |data| {
+            data.chunks(new_freq_mod.sample_count)
+                .map(|x| new_freq_mod.estimator.estimate_freq(x))
+                .map(|x| new_freq_mod.convert_to_bit(x))
+                .collect()
+        })
     }
-
-    /* this is just here for reference
-    fn encode_bits<T: cpal::Sample>(&self, data: &[u8]) -> Vec<T> {
-        let mut low_signal = signal::rate(44100.0)
-            .const_hz(self.low_bit_frequency)
-            .sine();
-        let mut high_signal = signal::rate(44100.0)
-            .const_hz(self.high_bit_frequency)
-            .sine();
-        let mut result_vec: Vec<T> = vec![];
-        for val in data {
-            if val != &0 {
-                for _ in 0..self.sample_count {
-                    result_vec.push(cpal::Sample::from(&(high_signal.next() as f32)));
-                }
-            } else {
-                for _ in 0..self.sample_count {
-                    result_vec.push(cpal::Sample::from(&(low_signal.next() as f32)));
-                }
-            }
-        }
-        return result_vec;
-    }
-
-    fn decode_bits<T: cpal::Sample>(&mut self, data: &[T]) -> Vec<u8> {
-        data.iter()
-            .map(|x| x.to_f32() as f64)
-            .collect::<Vec<f64>>()
-            .chunks(self.sample_count)
-            .map(|x| self.estimator.estimate_freq(x))
-            .map(|x| self.convert_to_bit(x))
-            .collect()
-    }
-    */
 }
