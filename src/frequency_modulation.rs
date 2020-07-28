@@ -64,6 +64,7 @@ impl Strategy for NaiveFrequencyModulation {
     fn create_decoding(&self) -> Box<dyn FnMut(&[f64]) -> Vec<u8> + Send> {
         //TODO: Fix the cloning thing. We might actually be able to change the API to actually
         //consume the Strategy, since we will probably only need to produce 1 per?
+        // just kidding it becomes way less testable if we can't produce the two parts
         let new_freq_mod = self.clone();
         Box::new(move |data| {
             data.chunks(new_freq_mod.sample_count)
@@ -71,5 +72,22 @@ impl Strategy for NaiveFrequencyModulation {
                 .map(|x| new_freq_mod.convert_to_bit(x))
                 .collect()
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    #[allow(non_snake_case)]
+    fn NaiveFrequencyModulation_simple_case() {
+        let test_bits = vec![0, 1, 0, 1, 0];
+        let strat = NaiveFrequencyModulation::default();
+        let mut encoded_value_func = strat.create_encoding();
+        let encoded_bits = encoded_value_func(&test_bits);
+        let mut decode_fn = strat.create_decoding();
+        let decoded_bits = decode_fn(&encoded_bits);
+        println!("{:?} : {:?}", test_bits, decoded_bits);
+        assert_eq!(test_bits, decoded_bits);
     }
 }
