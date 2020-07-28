@@ -87,7 +87,6 @@ mod tests {
         let encoded_bits = encoded_value_func(&test_bits);
         let mut decode_fn = strat.create_decoding();
         let decoded_bits = decode_fn(&encoded_bits);
-        println!("{:?} : {:?}", test_bits, decoded_bits);
         assert_eq!(test_bits, decoded_bits);
     }
 }

@@ -1,3 +1,6 @@
+use crate::errors::DeviceNotFoundError;
+use crate::frequency_modulation::NaiveFrequencyModulation;
+use crate::traits::BirdSender;
 use crate::traits::Strategy;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
@@ -13,6 +16,35 @@ impl BirdIOutput {
             .default_output_device()
             .expect("Can't find audio device on this system");
         BirdIOutput { device }
+    }
+
+    fn create_fn<T>(
+        &self,
+        data: &[f64],
+    ) -> impl Fn(&mut [T], &cpal::OutputCallbackInfo) + Send + 'static {
+        |_, _| {}
+    }
+
+    fn create_err_fn(&self) -> impl Fn(cpal::StreamError) {
+        |err| eprintln!("{}", err)
+    }
+
+    fn play_bits<T>(
+        &self,
+        data: &[f64],
+        device: cpal::Device,
+        config: cpal::SupportedStreamConfig,
+    ) -> Result<(), Box<dyn std::error::Error>>
+    where
+        T: cpal::Sample + 'static,
+    {
+        let stream = device.build_output_stream(
+            &config.config(),
+            self.create_fn::<T>(data),
+            self.create_err_fn(),
+        )?;
+        stream.play()?;
+        todo!()
     }
     /*
     pub fn play_bits<K: Strategy>(&self, data: &[u8], strategy: K) {
@@ -65,6 +97,25 @@ impl BirdIOutput {
         };
     }
     */
+}
+
+impl BirdSender<NaiveFrequencyModulation> for BirdIOutput {
+    fn transmit(
+        &self,
+        strategy: NaiveFrequencyModulation,
+        data: &[u8],
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut encoder = strategy.create_encoding();
+        let encoded_data = encoder(data);
+        let host = cpal::default_host();
+        let device = host.default_output_device().ok_or(DeviceNotFoundError)?;
+        let config = device.default_output_config()?;
+        match config.sample_format() {
+            cpal::SampleFormat::F32 => self.play_bits::<f32>(&encoded_data, device, config),
+            cpal::SampleFormat::I16 => self.play_bits::<i16>(&encoded_data, device, config),
+            cpal::SampleFormat::U16 => self.play_bits::<u16>(&encoded_data, device, config),
+        }
+    }
 }
 
 #[cfg(test)]
