@@ -5,6 +5,8 @@ use crate::traits::Strategy;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Device;
 
+use std::time::Duration;
+
 pub struct BirdIOutput {}
 
 impl BirdIOutput {
@@ -31,6 +33,10 @@ impl BirdIOutput {
         |err| eprintln!("{}", err)
     }
 
+    fn estimate_time(config: &cpal::SupportedStreamConfig, num_samples: usize) -> usize {
+        return 200;
+    }
+
     fn play_bits<T>(
         &self,
         data: Vec<f64>,
@@ -40,12 +46,14 @@ impl BirdIOutput {
     where
         T: cpal::Sample + 'static,
     {
+        let elapsed_time = Self::estimate_time(&config, data.len());
         let stream = device.build_output_stream(
             &config.config(),
             self.create_fn::<T>(data),
             self.create_err_fn(),
         )?;
         stream.play()?;
+        std::thread::sleep(Duration::from_millis(elapsed_time as u64));
         Ok(())
     }
 }
