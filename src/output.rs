@@ -20,9 +20,17 @@ impl BirdIOutput {
 
     fn create_fn<T>(
         &self,
-        data: &[f64],
-    ) -> impl Fn(&mut [T], &cpal::OutputCallbackInfo) + Send + 'static {
-        |_, _| {}
+        data: Vec<f64>,
+    ) -> impl Fn(&mut [T], &cpal::OutputCallbackInfo) + Send + 'static
+    where
+        T: cpal::Sample,
+    {
+        let index = 0;
+        move |input, _| {
+            for sample in input.iter_mut() {
+                *sample = cpal::Sample::from(&(data[index] as f32));
+            }
+        }
     }
 
     fn create_err_fn(&self) -> impl Fn(cpal::StreamError) {
@@ -31,7 +39,7 @@ impl BirdIOutput {
 
     fn play_bits<T>(
         &self,
-        data: &[f64],
+        data: Vec<f64>,
         device: cpal::Device,
         config: cpal::SupportedStreamConfig,
     ) -> Result<(), Box<dyn std::error::Error>>
@@ -111,9 +119,9 @@ impl BirdSender<NaiveFrequencyModulation> for BirdIOutput {
         let device = host.default_output_device().ok_or(DeviceNotFoundError)?;
         let config = device.default_output_config()?;
         match config.sample_format() {
-            cpal::SampleFormat::F32 => self.play_bits::<f32>(&encoded_data, device, config),
-            cpal::SampleFormat::I16 => self.play_bits::<i16>(&encoded_data, device, config),
-            cpal::SampleFormat::U16 => self.play_bits::<u16>(&encoded_data, device, config),
+            cpal::SampleFormat::F32 => self.play_bits::<f32>(encoded_data, device, config),
+            cpal::SampleFormat::I16 => self.play_bits::<i16>(encoded_data, device, config),
+            cpal::SampleFormat::U16 => self.play_bits::<u16>(encoded_data, device, config),
         }
     }
 }
