@@ -13,7 +13,7 @@ fn test_basics() {
     thread::spawn(|| {
         thread::sleep(Duration::from_millis(100));
         let example_bits = vec![0, 1, 0, 1, 0, 1];
-        let mut strategy = NaiveFrequencyModulation::default();
+        let strategy = NaiveFrequencyModulation::default();
         let output = output::BirdIOutput::default();
         output.transmit(strategy, &example_bits).unwrap();
     });

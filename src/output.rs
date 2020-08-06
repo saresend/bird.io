@@ -33,8 +33,9 @@ impl BirdIOutput {
         |err| eprintln!("{}", err)
     }
 
-    fn estimate_time(config: &cpal::SupportedStreamConfig, num_samples: usize) -> usize {
-        return 200;
+    fn estimate_time(config: &cpal::SupportedStreamConfig, num_samples: usize) -> u32 {
+        let sample_rate: u32 = config.sample_rate().0;
+        return 2 * (num_samples as u32 / sample_rate);
     }
 
     fn play_bits<T>(
