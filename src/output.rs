@@ -23,8 +23,12 @@ impl BirdIOutput {
         let mut index = 0;
         move |input, _| {
             for sample in input.iter_mut() {
-                *sample = cpal::Sample::from(&(data[index] as f32));
-                index += 1;
+                if index < data.len() {
+                    *sample = cpal::Sample::from(&(data[index] as f32));
+                    index += 1;
+                } else {
+                    *sample = cpal::Sample::from(&0.0);
+                }
             }
         }
     }
@@ -35,7 +39,8 @@ impl BirdIOutput {
 
     fn estimate_time(config: &cpal::SupportedStreamConfig, num_samples: usize) -> u32 {
         let sample_rate: u32 = config.sample_rate().0;
-        return 2 * (num_samples as u32 / sample_rate);
+        let time_length = 1000.0 * (num_samples as f32 / sample_rate as f32);
+        return (time_length * 1.5) as u32;
     }
 
     fn play_bits<T>(
@@ -80,5 +85,17 @@ impl BirdSender<NaiveFrequencyModulation> for BirdIOutput {
 
 #[cfg(test)]
 mod tests {
+    use super::super::output;
+    use super::*;
     //TODO: Write tests once the APIs start finalizing
+    #[test]
+    fn simple_output_test() {
+        let sample_bits = vec![
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        ];
+        let strategy = NaiveFrequencyModulation::default();
+        let output = output::BirdIOutput::default();
+        output.transmit(strategy, &sample_bits).unwrap();
+    }
 }

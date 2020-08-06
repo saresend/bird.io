@@ -21,6 +21,7 @@ impl NaiveFrequencyModulation {
     }
 
     pub fn convert_to_bit(&self, frequency: f64) -> u8 {
+        println!("{}", frequency);
         let ld = frequency - self.low_bit_frequency;
         let hd = frequency - self.high_bit_frequency;
         let ld = ld.abs();
@@ -83,7 +84,7 @@ mod tests {
     fn NaiveFrequencyModulation_simple_case() {
         let test_bits = vec![0, 1, 0, 1, 0];
         let strat = NaiveFrequencyModulation::default();
-        let mut encoded_value_func = strat.create_encoding();
+        let mut encoded_value_func = strat.create_encoding(44100);
         let encoded_bits = encoded_value_func(&test_bits);
         let mut decode_fn = strat.create_decoding();
         let decoded_bits = decode_fn(&encoded_bits);

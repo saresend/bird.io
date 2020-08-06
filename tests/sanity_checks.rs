@@ -12,17 +12,13 @@ fn test_basics() {
     let input_channel = input.start(strategy).unwrap();
     thread::spawn(|| {
         thread::sleep(Duration::from_millis(100));
-        let mut example_bits = vec![0; 100];
-        let mut example_bits1 = vec![1; 100];
-        let mut example_bits2 = vec![0; 100];
-        let mut example_bits3 = vec![1; 100];
-        example_bits.append(&mut example_bits1);
-        example_bits.append(&mut example_bits2);
-        example_bits.append(&mut example_bits3);
+        let example_bits = vec![1; 100];
         let strategy = NaiveFrequencyModulation::default();
         let output = output::BirdIOutput::default();
         output.transmit(strategy, &example_bits).unwrap();
+        println!("Finished sending");
     });
-    let output = input_channel.recv().unwrap();
-    println!("{:?}", output);
+    loop {
+        let _output = input_channel.recv().unwrap();
+    }
 }
