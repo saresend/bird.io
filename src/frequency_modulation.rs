@@ -13,7 +13,7 @@ pub struct NaiveFrequencyModulation {
 impl NaiveFrequencyModulation {
     pub fn default() -> Self {
         Self {
-            estimator: Yin::init(0.1, 3000.0, 10000.0, 44100),
+            estimator: Yin::init(1.5, 3000.0, 10000.0, 44100),
             low_bit_frequency: 4410.0,
             high_bit_frequency: 8820.0,
             sample_count: 1000,
