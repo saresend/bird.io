@@ -63,9 +63,6 @@ impl Strategy for NaiveFrequencyModulation {
     }
 
     fn create_decoding(&self) -> Box<dyn FnMut(&[f64]) -> Vec<u8> + Send> {
-        //TODO: Fix the cloning thing. We might actually be able to change the API to actually
-        //consume the Strategy, since we will probably only need to produce 1 per?
-        // just kidding it becomes way less testable if we can't produce the two parts
         let new_freq_mod = self.clone();
         Box::new(move |data| {
             data.chunks(new_freq_mod.sample_count)

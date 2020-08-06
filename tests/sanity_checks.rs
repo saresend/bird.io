@@ -18,7 +18,9 @@ fn test_basics() {
         output.transmit(strategy, &example_bits).unwrap();
         println!("Finished sending");
     });
+
     loop {
-        let _output = input_channel.recv().unwrap();
+        let output = input_channel.recv().unwrap();
+        println!("{:?}", output);
     }
 }

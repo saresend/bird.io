@@ -151,4 +151,14 @@ mod tests {
         let r2 = bl.close();
         assert!(r2.is_ok());
     }
+
+    #[test]
+    fn realtime_freq_est() {
+        let mut bl = BirdListener::default();
+        let strategy = NaiveFrequencyModulation::default();
+        let r1 = bl.start(strategy).unwrap();
+        loop {
+            let _ = r1.recv().unwrap();
+        }
+    }
 }
