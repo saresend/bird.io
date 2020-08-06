@@ -34,12 +34,12 @@ impl NaiveFrequencyModulation {
 }
 
 impl Strategy for NaiveFrequencyModulation {
-    fn create_encoding(&self) -> Box<dyn FnMut(&[u8]) -> Vec<f64> + Send> {
-        let mut low_signal = signal::rate(44100.0)
+    fn create_encoding(&self, sample_rate: u32) -> Box<dyn FnMut(&[u8]) -> Vec<f64> + Send> {
+        let mut low_signal = signal::rate(sample_rate as f64)
             .const_hz(self.low_bit_frequency)
             .sine();
 
-        let mut high_signal = signal::rate(44100.0)
+        let mut high_signal = signal::rate(sample_rate as f64)
             .const_hz(self.high_bit_frequency)
             .sine();
         let sample_count = self.sample_count;

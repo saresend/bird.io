@@ -3,7 +3,6 @@ use crate::frequency_modulation::NaiveFrequencyModulation;
 use crate::traits::BirdSender;
 use crate::traits::Strategy;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use cpal::Device;
 
 use std::time::Duration;
 
@@ -17,14 +16,15 @@ impl BirdIOutput {
     fn create_fn<T>(
         &self,
         data: Vec<f64>,
-    ) -> impl Fn(&mut [T], &cpal::OutputCallbackInfo) + Send + 'static
+    ) -> impl FnMut(&mut [T], &cpal::OutputCallbackInfo) + Send + 'static
     where
         T: cpal::Sample,
     {
-        let index = 0;
+        let mut index = 0;
         move |input, _| {
             for sample in input.iter_mut() {
                 *sample = cpal::Sample::from(&(data[index] as f32));
+                index += 1;
             }
         }
     }
@@ -65,11 +65,11 @@ impl BirdSender<NaiveFrequencyModulation> for BirdIOutput {
         strategy: NaiveFrequencyModulation,
         data: &[u8],
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let mut encoder = strategy.create_encoding();
-        let encoded_data = encoder(data);
         let host = cpal::default_host();
         let device = host.default_output_device().ok_or(DeviceNotFoundError)?;
         let config = device.default_output_config()?;
+        let mut encoder = strategy.create_encoding(config.sample_rate().0);
+        let encoded_data = encoder(data);
         match config.sample_format() {
             cpal::SampleFormat::F32 => self.play_bits::<f32>(encoded_data, device, config),
             cpal::SampleFormat::I16 => self.play_bits::<i16>(encoded_data, device, config),

@@ -2,7 +2,7 @@ use std::sync::mpsc::Receiver;
 /// This handles the strategy interface that will be used to handle all bit encoding and decoding
 pub trait Strategy {
     fn create_decoding(&self) -> Box<dyn FnMut(&[f64]) -> Vec<u8> + Send>;
-    fn create_encoding(&self) -> Box<dyn FnMut(&[u8]) -> Vec<f64> + Send>;
+    fn create_encoding(&self, u32) -> Box<dyn FnMut(&[u8]) -> Vec<f64> + Send>;
 }
 /// This should handle all methods associated with a given implementation of a receiver
 /// Here the type parameter
